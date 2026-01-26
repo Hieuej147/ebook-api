@@ -34,21 +34,34 @@ export class PrismaService
     console.log('Database disconnected!');
   }
 
+  // async cleanDB() {
+  //   if (this.config.get('NODE_ENV') === 'production') {
+  //     throw new Error('Cannot clean database in production');
+  //   }
+
+  //   const models = Reflect.ownKeys(this).filter(
+  //     (key) => typeof key === 'string' && !key.startsWith('_'),
+  //   );
+
+  //   return Promise.all(
+  //     models.map((modelKey) => {
+  //       if (typeof modelKey === 'string') {
+  //         return this[modelKey].deleteMany();
+  //       }
+  //     }),
+  //   );
+  // }
   async cleanDB() {
     if (this.config.get('NODE_ENV') === 'production') {
       throw new Error('Cannot clean database in production');
     }
 
-    const models = Reflect.ownKeys(this).filter(
-      (key) => typeof key === 'string' && !key.startsWith('_'),
+    const modelKeys = Object.keys(this).filter(
+      (key) =>
+        typeof this[key] === 'object' &&
+        typeof this[key]?.deleteMany === 'function',
     );
 
-    return Promise.all(
-      models.map((modelKey) => {
-        if (typeof modelKey === 'string') {
-          return this[modelKey].deleteMany();
-        }
-      }),
-    );
+    await this.$transaction(modelKeys.map((key) => this[key].deleteMany()));
   }
 }

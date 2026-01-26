@@ -1,4 +1,4 @@
-import { All, Controller, Req, Res } from '@nestjs/common';
+import { All, Controller, Req, Res, UseGuards } from '@nestjs/common';
 import {
   CopilotRuntime,
   copilotRuntimeNestEndpoint,

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { Role } from '@prisma/client';
-import { Roles } from 'src/common/decorator/roles.decorator';
+import { Roles } from '../../common/decorator/roles.decorator';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -27,8 +27,8 @@ import {
   QueryCategoryDto,
   UpdateCategoryDto,
 } from './dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 
 @ApiTags('Categories')
 @Controller('category')

@@ -9,16 +9,16 @@ import {
 import { BooksService } from '../books/books.service';
 import { ExportDocService } from './export-doc.service';
 import { type Response } from 'express';
-import { JwtStrategy } from '../auth/strategies';
-import { Role } from '@prisma/client';
-import { Roles } from 'src/common/decorator/roles.decorator';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-
+import { Role } from '@prisma/client';
+import { Roles } from '../../common/decorator/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 @Controller('export-doc')
-// @UseGuards(JwtStrategy)
-// @Roles(Role.ADMIN)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
 @ApiTags('Export Doc')
-// @ApiBearerAuth('JWT-auth')
+@ApiBearerAuth('JWT-auth')
 export class ExportDocController {
   constructor(
     private bookService: BooksService,

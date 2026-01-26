@@ -10,11 +10,11 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { type RequestWithUser } from 'src/common/interfaces/req-user.interface';
+import { type RequestWithUser } from '../../common/interfaces/req-user.interface';
 import { UserResponseDto } from './dto/user-res.dto';
 import { UserService } from './users.service';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -22,9 +22,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from 'src/common/decorator/roles.decorator';
+import { Roles } from '../../common/decorator/roles.decorator';
 import { Role } from '@prisma/client';
-import { GetUser } from 'src/common/decorator';
+import { GetUser } from '../../common/decorator';
 import { UpdateUserDto, ChangePasswordDto } from './dto';
 
 @ApiTags('users')

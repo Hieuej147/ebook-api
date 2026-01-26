@@ -10,8 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -31,7 +31,7 @@ import {
 import {
   ModerateThrottle,
   RelaxedThrottle,
-} from 'src/common/decorator/custome-throttler.decorater';
+} from '../../common/decorator/custome-throttler.decorater';
 import {
   CreateOrderDto,
   OrderApiResponseDto,
@@ -40,8 +40,8 @@ import {
   QueryOrderDto,
   UpdateOrderDto,
 } from './dto';
-import { GetUser } from 'src/common/decorator';
-import { Roles } from 'src/common/decorator/roles.decorator';
+import { GetUser } from '../../common/decorator';
+import { Roles } from '../../common/decorator/roles.decorator';
 import { Role } from '@prisma/client';
 
 @ApiTags('orders')

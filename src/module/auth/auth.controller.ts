@@ -12,7 +12,7 @@ import { SignupDto } from './dto/signup.dto';
 import { AuthResponseDto } from './dto';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SigninDto } from './dto/signin.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { GetUser } from '../../common/decorator/get-user.decorator';
 import { RefreshTokenGuard } from './guards';
 

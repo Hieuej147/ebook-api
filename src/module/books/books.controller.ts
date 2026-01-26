@@ -13,10 +13,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { BooksService } from './books.service';
-import { Roles } from 'src/common/decorator/roles.decorator';
+import { Roles } from '../../common/decorator/roles.decorator';
 import { Role } from '@prisma/client';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -30,7 +30,7 @@ import {
   QueryBookDto,
   UpdateBookDto,
 } from './dto';
-import { UploadImage } from 'src/common/decorator/upload-image.decorator';
+import { UploadImage } from '../../common/decorator/upload-image.decorator';
 
 @Controller('books')
 export class BooksController {

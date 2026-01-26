@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BookResponseDto } from 'src/module/books/dto';
+import { BookResponseDto } from '../../books/dto/res-book.dto';
 
 
 /**

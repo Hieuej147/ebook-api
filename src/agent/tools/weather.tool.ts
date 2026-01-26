@@ -16,30 +16,30 @@ export const getWeather = tool(
     }),
   },
 );
-export const getBooksTool = tool(
-  async (id, config: RunnableConfig) => {
-    // 1. Trích xuất token đã được forward
-    const token = config.configurable?.copilotkit_auth;
+// agent/src/tools/book-store.tool.ts
+export const getBookDetailTool = tool(
+  // Đổi tên cho rõ nghĩa
+  async ({ id }: { id: string }) => {
+    try {
+      console.log('Đang gọi API cho ID:', id);
+      const res = await fetch(`http://localhost:3000/books/${id}`);
 
-    if (!token) return 'Lỗi: Không tìm thấy quyền truy cập.';
+      if (!res.ok) {
+        return { error: `Không tìm thấy sách với ID: ${id}` };
+      }
 
-    // 2. Gọi API NestJS với Token này
-    const response = await fetch(`http://localhost:3000/books/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.status === 401)
-      return 'Lỗi: Bạn không có quyền xem danh sách sách.';
-
-    return await response.text();
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      return { error: 'Lỗi kết nối đến server backend' };
+    }
   },
   {
-    name: 'get_books',
-    description: 'Lấy danh sách sách từ hệ thống NestJS.',
+    name: 'getBookDetail', // Tên rõ ràng: Lấy chi tiết sách
+    description:
+      'Dùng tool này khi người dùng cung cấp một mã định danh (ID) cụ thể của sách để lấy thông tin chi tiết.',
     schema: z.object({
-      id: z.string().describe('ID cua sach can lay'),
+      id: z.string().describe('Mã UUID của cuốn sách'),
     }),
   },
 );

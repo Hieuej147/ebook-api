@@ -261,58 +261,61 @@ export class ExportDocService {
             );
             doc.addPage();
           } catch (error) {
-            console.error(`Could not embed image for book: ${book.title}`, error);
+            console.error(
+              `Could not embed image for book: ${book.title}`,
+              error,
+            );
           }
-          // Title Page
-          doc
-            .font(TYPOGRAPHY.fonts.sansBold)
-            .fontSize(TYPOGRAPHY.sizes.title)
-            .fillColor(TYPOGRAPHY.colors.heading)
-            .text(book.title, { align: 'center' });
-          doc.moveDown(2);
-
-          if (book.subtitle && book.subtitle.trim()) {
-            doc
-              .font(TYPOGRAPHY.fonts.sans)
-              .fontSize(TYPOGRAPHY.sizes.h2)
-              .fillColor(TYPOGRAPHY.colors.text)
-              .text(book.subtitle, { align: 'center' });
-            doc.moveDown(1);
-          }
-          doc.font(TYPOGRAPHY.fonts.sans).fontSize(TYPOGRAPHY.sizes.author);
-          doc.fillColor(TYPOGRAPHY.colors.text);
-          doc.text(`by ${book.author}`, { align: 'center' });
-          // Process chapters
-          const chapters = await this.chaptersService.getChaptersByBookId(id);
-          if (!chapters) {
-            throw new NotFoundException('Chapters not found');
-          }
-          chapters.forEach((chapter, index) => {
-            try {
-              doc.addPage();
-
-              // chapter title
-              doc
-                .font(TYPOGRAPHY.fonts.sansBold)
-                .fontSize(TYPOGRAPHY.sizes.chapterTitle)
-                .fillColor(TYPOGRAPHY.colors.heading)
-                .text(chapter.title || `Chapter ${index + 1}`, {
-                  align: 'left',
-                });
-              doc.moveDown(
-                TYPOGRAPHY.spacing.chapterSpacing / TYPOGRAPHY.sizes.body,
-              );
-              // chapter content
-              if (chapter.content && chapter.content.trim()) {
-                this.renderMarkdown(doc, chapter.content);
-              }
-            } catch (error) {
-              console.error(`Error chapter ${index}`, error);
-            }
-          });
-          // End document
-          doc.end();
         }
+        // Title Page
+        doc
+          .font(TYPOGRAPHY.fonts.sansBold)
+          .fontSize(TYPOGRAPHY.sizes.title)
+          .fillColor(TYPOGRAPHY.colors.heading)
+          .text(book.title, { align: 'center' });
+        doc.moveDown(2);
+
+        if (book.subtitle && book.subtitle.trim()) {
+          doc
+            .font(TYPOGRAPHY.fonts.sans)
+            .fontSize(TYPOGRAPHY.sizes.h2)
+            .fillColor(TYPOGRAPHY.colors.text)
+            .text(book.subtitle, { align: 'center' });
+          doc.moveDown(1);
+        }
+        doc.font(TYPOGRAPHY.fonts.sans).fontSize(TYPOGRAPHY.sizes.author);
+        doc.fillColor(TYPOGRAPHY.colors.text);
+        doc.text(`by ${book.author}`, { align: 'center' });
+        // Process chapters
+        const chapters = await this.chaptersService.getChaptersByBookId(id);
+        if (!chapters) {
+          throw new NotFoundException('Chapters not found');
+        }
+        chapters.forEach((chapter, index) => {
+          try {
+            doc.addPage();
+
+            // chapter title
+            doc
+              .font(TYPOGRAPHY.fonts.sansBold)
+              .fontSize(TYPOGRAPHY.sizes.chapterTitle)
+              .fillColor(TYPOGRAPHY.colors.heading)
+              .text(chapter.title || `Chapter ${index + 1}`, {
+                align: 'left',
+              });
+            doc.moveDown(
+              TYPOGRAPHY.spacing.chapterSpacing / TYPOGRAPHY.sizes.body,
+            );
+            // chapter content
+            if (chapter.content && chapter.content.trim()) {
+              this.renderMarkdown(doc, chapter.content);
+            }
+          } catch (error) {
+            console.error(`Error chapter ${index}`, error);
+          }
+        });
+        // End document
+        doc.end();
       } catch (error) {
         console.error(' Error exporting PDF: ', error);
         reject(error);
