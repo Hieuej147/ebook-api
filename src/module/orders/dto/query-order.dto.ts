@@ -11,6 +11,10 @@ export enum OrderStatus {
 
 export class QueryOrderDto {
   @IsOptional()
+  @IsString()
+  userId?: string;
+  
+  @IsOptional()
   @Type(() => Number)
   page?: number = 1;
 
@@ -19,7 +23,7 @@ export class QueryOrderDto {
   limit?: number = 10;
 
   @IsOptional()
-  @Type(() => Number)
+  @Type(() => String)
   status?: OrderStatus;
 
   @IsOptional()

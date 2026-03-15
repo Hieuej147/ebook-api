@@ -117,11 +117,12 @@ export class AuthService {
         lastName: true,
         role: true,
         customerType: true,
+        refreshToken: true,
       },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    if (!user || !user.refreshToken) {
+      throw new UnauthorizedException('Access Denied');
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
@@ -129,7 +130,14 @@ export class AuthService {
 
     return {
       ...tokens,
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        customerType: user.customerType,
+      },
     };
   }
 

@@ -25,7 +25,7 @@ import {
 import { Roles } from '../../common/decorator/roles.decorator';
 import { Role } from '@prisma/client';
 import { GetUser } from '../../common/decorator';
-import { UpdateUserDto, ChangePasswordDto } from './dto';
+import { UpdateUserDto, ChangePasswordDto, UpdateUserbyAdminDto } from './dto';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT-auth')
@@ -57,7 +57,7 @@ export class UserController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(): Promise<UserResponseDto[]> {
-    return await this.findAll();
+    return await this.usersService.findAll();
   }
 
   // Get user by ID (for admin purposes)
@@ -72,6 +72,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
+    console.log(id);
     return await this.usersService.findOne(id);
   }
 
@@ -91,6 +92,26 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     return await this.usersService.update(userId, updateUserDto);
+  }
+
+  // Update current user by admin
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update current user by admin' })
+  @ApiBody({ type: UpdateUserbyAdminDto })
+  @ApiResponse({
+    status: 200,
+    description: 'The updated user profile',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  async updatebyAdmin(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserbyAdminDto,
+  ): Promise<UserResponseDto> {
+    console.log('Dữ liệu NestJS nhận được:', updateUserDto)
+    return await this.usersService.updatebyAdmin(id, updateUserDto);
   }
 
   // Change current user password

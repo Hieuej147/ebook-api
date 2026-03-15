@@ -137,6 +137,38 @@ export class OrdersService {
     };
   }
 
+  // orders.service.ts
+
+  async findByUserIdForAdmin(userId: string, query: QueryOrderDto) {
+    const { page = 1, limit = 10 } = query;
+
+    const [data, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where: { userId },
+        include: {
+          orderItems: {
+            include: {
+              book: true,
+            },
+          },
+          user: true, // <--- THÊM DÒNG NÀY VÀO ĐÂY NÈ HIẾU!
+        },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.order.count({ where: { userId } }),
+    ]);
+
+    // Giờ thì gọi hàm wrap/map sẽ không còn bị lỗi đỏ lòm nữa
+    return {
+      success: true,
+      data: data.map((order) => this.wrap(order)),
+      total,
+      page,
+      limit,
+    };
+  }
   // Get user current orders
   async findAll(
     userId: string,
@@ -305,6 +337,7 @@ export class OrdersService {
   ): OrderResponseDto {
     return {
       id: order.id,
+      orderNumber: order.orderNumber,
       userId: order.userId,
       status: order.status,
       total: Number(order.totalAmount),

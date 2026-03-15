@@ -46,7 +46,11 @@ export class CategoryResponseDto {
     description: 'The total number of books belonging to this category',
   })
   bookCount: number;
-
+  @ApiProperty({
+    example: 124,
+    description: 'The total number of books is Activated',
+  })
+  activeBookCount: number;
   @ApiProperty({
     example: '2026-01-18T12:00:00Z',
     description: 'The date and time when the category was created',

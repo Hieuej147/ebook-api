@@ -53,6 +53,9 @@ export class OrderResponseDto {
   id: string;
 
   @ApiProperty()
+  orderNumber: string;
+
+  @ApiProperty()
   userId: string;
 
   @ApiProperty()

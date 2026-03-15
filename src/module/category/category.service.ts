@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CategoryResponseDto,
@@ -7,6 +12,7 @@ import {
   UpdateCategoryDto,
 } from './dto';
 import { Category, Prisma } from '@prisma/client';
+import { CategoryLookupDto } from '../books/dto/category-lookup.dto';
 
 @Injectable()
 export class CategoryService {
@@ -80,20 +86,54 @@ export class CategoryService {
           _count: {
             select: { books: true },
           },
+          books: {
+            where: { isActive: true },
+            select: { id: true },
+          },
         },
       }),
     ]);
 
     return {
-      data: categories.map((category) =>
-        this.formatCategory(category, category._count.books),
-      ),
+      data: categories.map((category) => {
+        // Tính toán trực tiếp số lượng active
+        const activeCount = category.books.length;
+        return this.formatCategory(
+          category,
+          category._count.books,
+          activeCount,
+        );
+      }),
       meta: {
         total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  async findAllList(): Promise<{ data: CategoryLookupDto[] }> {
+    const categoriesList = await this.prisma.category.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+    return {
+      // 2. Map trực tiếp, không cần qua formatCategory cồng kềnh
+      data: categoriesList.map((category) => ({
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+      })),
     };
   }
 
@@ -209,7 +249,8 @@ export class CategoryService {
 
   private formatCategory(
     category: Category,
-    bookCount: number,
+    bookCount: number = 0,
+    activeBookCount: number = 0,
   ): CategoryResponseDto {
     return {
       id: category.id,
@@ -219,6 +260,7 @@ export class CategoryService {
       imageUrl: category.imageUrl,
       isActive: category.isActive,
       bookCount,
+      activeBookCount,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
     };

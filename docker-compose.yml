@@ -10,5 +10,20 @@ services:
       POSTGRES_DB: nest
     networks:
       - freecodecamp
+
+  # ✅ Thêm Redis
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - freecodecamp
+    restart: unless-stopped
+
 networks:
   freecodecamp:
+
+volumes:
+  redis_data:

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: ebook-ai-agent
+    env: python
+    rootDir: ai-agent-python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false

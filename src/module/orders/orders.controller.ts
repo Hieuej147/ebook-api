@@ -102,6 +102,11 @@ export class OrdersController {
     required: false,
     type: Number,
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+  })
   @ApiResponse({
     description: 'List of orders',
     schema: {
@@ -121,6 +126,7 @@ export class OrdersController {
     description: 'Admin access required',
   })
   async findAllForAdmin(@Query() query: QueryOrderDto) {
+    console.log('OrderALLget: ', query);
     return await this.ordersService.findAllForAdmin(query);
   }
 
@@ -165,7 +171,15 @@ export class OrdersController {
   async findOneAdmin(@Param('id') id: string) {
     return await this.ordersService.findOne(id);
   }
-
+  @Get('admin/user/:userId') // Route riêng biệt cho Admin xem theo User
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: '[ADMIN] Lấy tất cả đơn hàng của một User cụ thể' })
+  async findByUserIdForAdmin(
+    @Param('userId') userId: string,
+    @Query() query: QueryOrderDto, // Vẫn dùng DTO cũ để phân trang (page, limit)
+  ) {
+    return await this.ordersService.findByUserIdForAdmin(userId, query);
+  }
   //User: Get own order by id
   @Get(':id')
   @RelaxedThrottle()
@@ -176,7 +190,7 @@ export class OrdersController {
     name: 'id',
     description: 'Order ID',
   })
-  @ApiOkResponse({ description: 'Order details', type: OrderApiResponseDto })
+  @ApiOkResponse({ description: 'Order details', type: OrderResponseDto })
   @ApiNotFoundResponse({
     description: 'Order not found',
   })

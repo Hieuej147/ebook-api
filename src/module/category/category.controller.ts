@@ -29,6 +29,7 @@ import {
 } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { CategoryLookupDto } from '../books/dto/category-lookup.dto';
 
 @ApiTags('Categories')
 @Controller('category')
@@ -110,6 +111,25 @@ export class CategoryController {
   @ApiResponse({ status: 404, description: 'Category not found' })
   async findBySlug(@Param('slug') slug: string): Promise<CategoryResponseDto> {
     return await this.categoryService.findBySlug(slug);
+  }
+  // Get all category (Admin only)
+  @Get('all/list')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get all categories without pagination for dropdowns',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Flat list of categories',
+    type: [CategoryResponseDto], // Trả về một mảng các DTO
+  })
+  @ApiOperation({ summary: 'Get all categories for dropdown' })
+  @ApiResponse({
+    status: 200,
+    type: [CategoryLookupDto], // Swagger sẽ dùng cái này để hiển thị mẫu JSON
+  })
+  async findAllList() {
+    return await this.categoryService.findAllList();
   }
 
   // Update category ( Admin only)

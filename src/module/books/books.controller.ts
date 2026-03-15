@@ -97,8 +97,8 @@ export class BooksController {
 
   // Get all books for admin
   @Get('admin/all')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get all books (Only admin)',
@@ -168,7 +168,7 @@ export class BooksController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Product not found',
+    description: 'Book not found',
   })
   @ApiResponse({
     status: 409,

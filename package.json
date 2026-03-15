@@ -26,19 +26,25 @@
     "test:e2e:test": "dotenv -e .env -- jest --watch --no-cache --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@copilotkit/runtime": "^1.51.3",
+    "@keyv/redis": "^5.1.6",
+    "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "cache-manager": "^6.4.3",
+    "cache-manager-ioredis-yet": "^2.1.2",
     "cloudinary": "^2.9.0",
+    "ioredis": "^5.10.0",
     "passport": "^0.7.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "streamifier": "^0.1.1"
   },
   "devDependencies": {
-    "@copilotkit/runtime": "^1.51.2",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@faker-js/faker": "^10.2.0",
     "@langchain/core": "^1.1.16",
     "@langchain/langgraph": "^1.1.1",
     "@langchain/openai": "^1.2.3",

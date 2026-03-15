@@ -8,7 +8,6 @@ import { Request } from 'express';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as argon from 'argon2';
 
-
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,
@@ -38,7 +37,6 @@ export class RefreshTokenStrategy extends PassportStrategy(
     }
 
     const refreshToken = authHeader.replace('Bearer', '').trim();
-    console.log('This is validate Bearer Token: ', refreshToken)
     if (!refreshToken) {
       throw new UnauthorizedException(
         'Refresh token is empty after extraction',
@@ -65,12 +63,22 @@ export class RefreshTokenStrategy extends PassportStrategy(
       refreshToken,
     );
 
- 
+    console.log('Kết quả verify Argon2:', refreshTokenMatches);
 
     if (!refreshTokenMatches) {
+      console.error(
+        'TOKEN KHÔNG KHỚP! DB có:',
+        user.refreshToken.substring(0, 15),
+      );
+      console.error('Gửi lên là:', refreshToken.substring(0, 15));
       throw new UnauthorizedException('Invalid refresh does not match');
     }
 
-    return { id: user.id, email: user.email, role: user.role, customerType: user.customerType };
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      customerType: user.customerType,
+    };
   }
 }
