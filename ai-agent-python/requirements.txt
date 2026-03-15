@@ -1,4 +1,6 @@
 accelerate==1.10.1
+ag-ui-langgraph==0.0.26
+ag-ui-protocol==0.1.13
 aiocache==0.12.3
 aiofiles==24.1.0
 aiohappyeyeballs==2.6.1
@@ -134,6 +136,10 @@ langchain-community==0.3.27
 langchain-core==0.3.76
 langchain-text-splitters==0.3.11
 langdetect==1.0.9
+langgraph==1.0.1
+langgraph-checkpoint==3.0.1
+langgraph-prebuilt==1.0.1
+langgraph-sdk==0.2.15
 langsmith==0.4.30
 lazy_loader==0.4
 ldap3==2.9.1
@@ -197,6 +203,7 @@ opentelemetry-sdk==1.37.0
 opentelemetry-semantic-conventions==0.58b0
 oracledb==3.3.0
 orjson==3.11.3
+ormsgpack==1.12.2
 overrides==7.7.0
 packaging==25.0
 pandas==2.2.3
@@ -332,6 +339,7 @@ wsproto==1.2.0
 x-transformers==2.10.2
 xlrd==2.0.1
 xlsxwriter==3.2.9
+xxhash==3.6.0
 yarl==1.20.1
 youtube-transcript-api==1.1.0
 zipp==3.23.0
