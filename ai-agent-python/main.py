@@ -84,7 +84,6 @@ def main():
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=os.getenv("NODE_ENV") != "production" # Tự động reload khi bạn sửa code ở src/lib/
     )
 
 if __name__ == "__main__":
