@@ -57,9 +57,17 @@ add_langgraph_fastapi_endpoint(
 
 
 # 4. Route kiểm tra trạng thái (Health Check)
-@app.get("/health")
-def health_check():
-    return {"status": "ok", "agent": "sample_agent"}
+# Thêm vào main.py
+@app.get("/book-agent/info")
+def agent_info():
+    return {
+        "agents": [
+            {
+                "name": "default",
+                "description": "Agent biên tập sách thông minh.",
+            }
+        ]
+    }
 
 # 5. Khởi chạy Server
 def main():
@@ -76,7 +84,7 @@ def main():
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=True # Tự động reload khi bạn sửa code ở src/lib/
+        reload=os.getenv("NODE_ENV") != "production" # Tự động reload khi bạn sửa code ở src/lib/
     )
 
 if __name__ == "__main__":
