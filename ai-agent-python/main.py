@@ -77,7 +77,7 @@ def main():
     
     print("\n" + "="*50)
     print(f"🚀 AG-UI Agent Server đang khởi động tại:")
-    print(f"🔗 URL: http://0.0.0.0:{port}/langgraph-agent")
+    print(f"🔗 URL: http://0.0.0.0:{port}/book-agent")
     print("="*50 + "\n")
     
     uvicorn.run(
