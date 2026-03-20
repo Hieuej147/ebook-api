@@ -110,7 +110,7 @@ export class UserController {
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserbyAdminDto,
   ): Promise<UserResponseDto> {
-    console.log('Dữ liệu NestJS nhận được:', updateUserDto)
+    // console.log('Dữ liệu NestJS nhận được:', updateUserDto)
     return await this.usersService.updatebyAdmin(id, updateUserDto);
   }
 
@@ -129,6 +129,7 @@ export class UserController {
 
   // Delete current user account
   @Delete('me')
+  @Roles(Role.USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete current user account' })
   @ApiResponse({

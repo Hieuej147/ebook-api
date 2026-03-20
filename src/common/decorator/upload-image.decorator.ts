@@ -17,7 +17,7 @@ export function UploadImage(fieldName: string = 'image') {
           if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
             return cb(
               new BadRequestException(
-                'Only image files (jpg, jpeg, png, gif) are allowed!',
+                'Only image files (jpg, jpeg, png are allowed!',
               ),
               false,
             );

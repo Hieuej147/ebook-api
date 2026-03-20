@@ -1,4 +1,3 @@
-// stats/dto/stats-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 
 // ============================
@@ -36,14 +35,17 @@ export class RevenueStatsDto {
   @ApiProperty({ example: 1096947 })
   prev_revenue: number;
 
-  @ApiProperty({ example: 11606, description: 'Phần trăm thay đổi so kỳ trước' })
+  @ApiProperty({
+    example: 11606,
+    description: 'Percentage change compared to the previous period',
+  })
   revenue_change_pct: number;
 
   @ApiProperty({ example: 158 })
   total_payments: number;
 
   @ApiProperty({
-    description: 'Đơn hàng theo trạng thái',
+    description: 'Orders grouped by status',
     example: {
       PENDING: { count: 169, total: 115972613 },
       DELIVERED: { count: 134, total: 114550394 },
@@ -73,7 +75,7 @@ export class UserStatsDto {
   active_buyers: number;
 
   @ApiProperty({
-    description: 'Phân loại khách hàng',
+    description: 'Customer type distribution',
     example: { NORMAL: 492, PREMIUM: 508 },
   })
   customer_types: Record<string, number>;
@@ -89,14 +91,17 @@ export class OrderStatsDto {
   @ApiProperty({ example: 695 })
   total_orders: number;
 
-  @ApiProperty({ example: 19.3, description: 'Tỉ lệ hoàn thành (%)' })
+  @ApiProperty({
+    example: 19.3,
+    description: 'Order completion rate (%)',
+  })
   completion_rate: number;
 
   @ApiProperty({ example: 234.5 })
   avg_order_value: number;
 
   @ApiProperty({
-    description: 'Chi tiết theo trạng thái',
+    description: 'Breakdown by order status',
     example: {
       PENDING: { count: 169, total: 115972613 },
       DELIVERED: { count: 134, total: 114550394 },
@@ -118,7 +123,7 @@ export class LowStockBookDto {
 
 export class BookStatsDto {
   @ApiProperty({
-    description: 'Sách theo trạng thái',
+    description: 'Books grouped by status',
     example: { DRAFT: 50, PUBLISHED: 332 },
   })
   by_status: Record<string, number>;
@@ -127,7 +132,7 @@ export class BookStatsDto {
   low_stock_books: LowStockBookDto[];
 
   @ApiProperty({
-    description: 'Phân bổ theo category',
+    description: 'Category distribution',
     example: { Fiction: 120, Science: 80 },
   })
   by_category: Record<string, number>;

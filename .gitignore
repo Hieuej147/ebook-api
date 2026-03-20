@@ -63,3 +63,4 @@ ai-agent-python/__pycache__/
 ai-agent-python/.env
 ai-agent-python/*.pyc
 
+THE_PROCESS_TEMPLATE.md

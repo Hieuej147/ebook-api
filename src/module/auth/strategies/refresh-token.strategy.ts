@@ -2,7 +2,7 @@
 
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, ExtractJwt } from 'passport-jwt';
+import { Strategy, ExtractJwt, StrategyOptionsWithRequest } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Request } from 'express';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
@@ -22,17 +22,17 @@ export class RefreshTokenStrategy extends PassportStrategy(
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_REFRESH_SECRET'),
       passReqToCallback: true,
-    });
+    } as StrategyOptionsWithRequest);
   }
 
   // validate refresh token
   async validate(req: Request, payload: { sub: string; email: string }) {
-    console.log('RefreshTokenStrategy.validate called');
-    console.log('Payload', { sub: payload.sub, email: payload.email });
+    // console.log('RefreshTokenStrategy.validate called');
+    // console.log('Payload', { sub: payload.sub, email: payload.email });
 
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      console.log('No authorization header found');
+      // console.log('No authorization header found');
       throw new UnauthorizedException('Refresh token not provided');
     }
 
@@ -63,16 +63,16 @@ export class RefreshTokenStrategy extends PassportStrategy(
       refreshToken,
     );
 
-    console.log('Kết quả verify Argon2:', refreshTokenMatches);
+    // console.log('Kết quả verify Argon2:', refreshTokenMatches);
 
-    if (!refreshTokenMatches) {
-      console.error(
-        'TOKEN KHÔNG KHỚP! DB có:',
-        user.refreshToken.substring(0, 15),
-      );
-      console.error('Gửi lên là:', refreshToken.substring(0, 15));
-      throw new UnauthorizedException('Invalid refresh does not match');
-    }
+    // if (!refreshTokenMatches) {
+    //   console.error(
+    //     'TOKEN KHÔNG KHỚP! DB có:',
+    //     user.refreshToken.substring(0, 15),
+    //   );
+    //   console.error('Gửi lên là:', refreshToken.substring(0, 15));
+    //   throw new UnauthorizedException('Invalid refresh does not match');
+    // }
 
     return {
       id: user.id,

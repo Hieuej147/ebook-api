@@ -19,7 +19,7 @@ export class StatsController {
 
   @Get('overview')
   @ApiOperation({
-    summary: 'Tổng quan thống kê (doanh thu + users + đơn hàng + sách)',
+    summary: 'Overview statistics (revenue + users + orders + books)',
   })
   @ApiQuery({
     name: 'period',
@@ -35,7 +35,7 @@ export class StatsController {
 
   @Get('revenue')
   @ApiOperation({
-    summary: 'Thống kê doanh thu, top sách bán chạy, đơn hàng theo trạng thái',
+    summary: 'Revenue statistics, top-selling books, and orders by status',
   })
   @ApiQuery({
     name: 'period',
@@ -51,7 +51,7 @@ export class StatsController {
 
   @Get('users')
   @ApiOperation({
-    summary: 'Thống kê người dùng mới, active buyers, NORMAL vs PREMIUM',
+    summary: 'User statistics: new users, active buyers, NORMAL vs PREMIUM',
   })
   @ApiQuery({
     name: 'period',
@@ -65,7 +65,7 @@ export class StatsController {
 
   @Get('orders')
   @ApiOperation({
-    summary: 'Thống kê đơn hàng, completion rate, avg order value',
+    summary: 'Order statistics: completion rate and average order value',
   })
   @ApiQuery({
     name: 'period',
@@ -79,7 +79,8 @@ export class StatsController {
 
   @Get('books')
   @ApiOperation({
-    summary: 'Thống kê sách DRAFT/PUBLISHED, hết hàng, phân bổ category',
+    summary:
+      'Book statistics: DRAFT/PUBLISHED, out of stock, category distribution',
   })
   @ApiResponse({ status: 200, type: BookStatsDto })
   getBooks(): Promise<BookStatsDto> {
@@ -87,7 +88,7 @@ export class StatsController {
   }
 
   @Get('revenue/chart')
-  @ApiOperation({ summary: 'Chart data doanh thu theo thời gian' })
+  @ApiOperation({ summary: 'Revenue chart data over time' })
   @ApiQuery({
     name: 'period',
     enum: ['today', 'week', 'month', 'year'],
@@ -98,7 +99,7 @@ export class StatsController {
   }
 
   @Get('users/chart')
-  @ApiOperation({ summary: 'Chart data users mới theo thời gian' })
+  @ApiOperation({ summary: 'New users chart data over time' })
   @ApiQuery({
     name: 'period',
     enum: ['today', 'week', 'month', 'year'],
@@ -109,7 +110,7 @@ export class StatsController {
   }
 
   @Get('orders/chart')
-  @ApiOperation({ summary: 'Chart data đơn hàng theo thời gian' })
+  @ApiOperation({ summary: 'Orders chart data over time' })
   @ApiQuery({
     name: 'period',
     enum: ['today', 'week', 'month', 'year'],
@@ -118,8 +119,9 @@ export class StatsController {
   getOrderChart(@Query('period') period: Period = 'month') {
     return this.statsService.getOrderChart(period);
   }
+
   @Get('books/chart')
-  @ApiOperation({ summary: 'Chart data sách mới theo thời gian' })
+  @ApiOperation({ summary: 'New books chart data over time' })
   @ApiQuery({
     name: 'period',
     enum: ['today', 'week', 'month', 'year'],

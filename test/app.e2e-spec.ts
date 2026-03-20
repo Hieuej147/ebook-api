@@ -7,25 +7,6 @@ import * as pactum from 'pactum';
 import { PrismaService } from '../src/module/prisma/prisma.service';
 import { SignupDto } from 'src/module/auth/dto';
 
-// describe('AppController (e2e)', () => {
-//   let app: INestApplication<App>;
-
-//   beforeEach(async () => {
-//     const moduleFixture: TestingModule = await Test.createTestingModule({
-//       imports: [AppModule],
-//     }).compile();
-
-//     app = moduleFixture.createNestApplication();
-//     await app.init();
-//   });
-
-//   it('/ (GET)', () => {
-//     return request(app.getHttpServer())
-//       .get('/')
-//       .expect(200)
-//       .expect('Hello World!');
-//   });
-// });
 describe('EBook API E2E', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -41,7 +22,7 @@ describe('EBook API E2E', () => {
     await app.listen(3333);
 
     prisma = app.get(PrismaService);
-    await prisma.cleanDB(); // Hàm xóa dữ liệu cũ
+    await prisma.cleanDB();
     pactum.request.setBaseUrl('http://localhost:3333');
   });
 
@@ -73,11 +54,10 @@ describe('EBook API E2E', () => {
         .expectStatus(201);
     });
 
-    // ĐÂY LÀ CHỖ QUAN TRỌNG: Cập nhật Role trực tiếp trong DB
     it('should upgrade user to ADMIN in database', async () => {
       await prisma.user.update({
         where: { email: adminDto.email },
-        data: { role: 'ADMIN' }, // 'ADMIN' phải khớp với Enum trong Schema
+        data: { role: 'ADMIN' },
       });
     });
 
@@ -90,7 +70,7 @@ describe('EBook API E2E', () => {
           password: adminDto.password,
         })
         .expectStatus(200)
-        .stores('adminAt', 'accessToken'); // Lưu token Admin
+        .stores('adminAt', 'accessToken');
     });
 
     it('should signup as Normal User', () => {
@@ -110,7 +90,7 @@ describe('EBook API E2E', () => {
           password: userDto.password,
         })
         .expectStatus(200)
-        .stores('userAt', 'accessToken'); // Lưu token User
+        .stores('userAt', 'accessToken');
     });
   });
   describe('Category & Books', () => {
@@ -121,7 +101,7 @@ describe('EBook API E2E', () => {
         .withHeaders('Authorization', 'Bearer $S{adminAt}')
         .withBody({ name: 'Công nghệ', description: 'Sách về lập trình' })
         .expectStatus(201)
-        .stores('catId', 'id'); // Lưu ID danh mục để dùng cho Sách
+        .stores('catId', 'id');
     });
 
     it('should create a new book (Admin Only)', () => {
@@ -139,7 +119,7 @@ describe('EBook API E2E', () => {
           status: 'PUBLISHED',
         })
         .expectStatus(201)
-        .stores('bookId', 'id'); // Lưu ID sách
+        .stores('bookId', 'id');
     });
 
     it('should get all books (Public)', () => {
@@ -170,7 +150,7 @@ describe('EBook API E2E', () => {
           shippingAddress: '99 Cầu Giấy, Hà Nội',
         })
         .expectStatus(201)
-        .stores('orderId', 'data.id'); // Lưu ID đơn hàng
+        .stores('orderId', 'data.id');
     });
   });
   describe('Chapters', () => {
@@ -208,7 +188,7 @@ describe('EBook API E2E', () => {
         .get('/export-doc/$S{bookId}/pdf')
         .withRequestTimeout(60000)
         .expectStatus(200)
-        .expectHeader('content-type', 'application/pdf'); // Kiểm tra định dạng file
+        .expectHeader('content-type', 'application/pdf');
     }, 70000);
   });
 });
