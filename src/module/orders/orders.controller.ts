@@ -126,7 +126,7 @@ export class OrdersController {
     description: 'Admin access required',
   })
   async findAllForAdmin(@Query() query: QueryOrderDto) {
-    console.log('OrderALLget: ', query);
+    // console.log('OrderALLget: ', query);
     return await this.ordersService.findAllForAdmin(query);
   }
 

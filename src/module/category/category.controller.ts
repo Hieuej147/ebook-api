@@ -78,7 +78,7 @@ export class CategoryController {
     },
   })
   async findAll(@Query() queryDto: QueryCategoryDto) {
-    console.log('This is active request: ', queryDto.isActive);
+    // console.log('This is active request: ', queryDto.isActive);
     return await this.categoryService.findAll(queryDto);
   }
 
