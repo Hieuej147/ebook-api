@@ -9,14 +9,14 @@ from state import AgentState
 class ViewChapterInput(BaseModel):
     chapterNumber: Optional[int] = Field(
         default=None, 
-        description="Số thứ tự chương cần xem. Nếu để trống, hệ thống sẽ tự động trả về thông tin của chương mà người dùng đang chọn trên màn hình."
+        description="The sequence number of the chapter to view. If left blank, the system will automatically return the information of the chapter the user is currently selecting on the interface."
     )
 
 @tool("view_chapter_details", args_schema=ViewChapterInput)
 def view_chapter_details(chapterNumber: Optional[int] = None):
     """
-    Sử dụng tool này để xem nội dung chi tiết và dàn ý của một chương cụ thể, 
-    đặc biệt là để biết người dùng đang thao tác ở chương nào.
+    Use this tool to view the detailed content and outline of a specific chapter, 
+    especially useful for identifying which chapter the user is currently working on.
     """
     pass
 
@@ -25,7 +25,7 @@ async def view_chapter_node(state: AgentState, config: RunnableConfig):
     tool_call = ai_message.tool_calls[0]
     args = tool_call["args"]
     
-    # 1. Ưu tiên số chương AI yêu cầu, nếu AI không yêu cầu (None) -> Lấy số chương user đang chọn trên UI
+    # 1. Prioritize the chapter number requested by the AI. If none is requested (None) -> Use the chapter number selected by the user on the UI
     requested_num = args.get("chapterNumber")
     selected_num = state.get("selectedChapterNumber")
     
@@ -34,39 +34,39 @@ async def view_chapter_node(state: AgentState, config: RunnableConfig):
     book = state.get("book", {})
     chapters = book.get("chapters", [])
 
-    # 2. Xử lý logic trả về thông tin
+    # 2. Process logic to return the appropriate information
     content = ""
     if not chapters:
-        content = "Hiện tại sách chưa có dàn ý hoặc chương nào được tạo."
+        content = "Currently, the book has no outline or chapters created."
     elif target_num is not None:
-        # Tìm chi tiết chương mục tiêu
+        # Find details of the target chapter
         ch = next((c for c in chapters if c.get("chapterNumber") == target_num), None)
         if ch:
             is_active_chapter = (target_num == selected_num)
-            status_text = "ĐÂY LÀ CHƯƠNG NGƯỜI DÙNG ĐANG CHỌN TRÊN GIAO DIỆN." if is_active_chapter else "Đây là chương bạn yêu cầu xem."
+            status_text = "THIS IS THE CHAPTER THE USER IS CURRENTLY SELECTING ON THE UI." if is_active_chapter else "This is the chapter you requested to view."
             
             content = (
-                f"--- THÔNG TIN CHƯƠNG {target_num} ---\n"
-                f"- Trạng thái: {status_text}\n"
-                f"- Tiêu đề: {ch.get('title')}\n"
-                f"- Mô tả/Dàn ý: {ch.get('description')}\n"
-                f"- Nội dung hiện tại (Độ dài: {len(ch.get('content', ''))} ký tự):\n"
-                f"{ch.get('content') or 'Chương này đang trống, chưa được viết nội dung.'}\n\n"
+                f"--- INFORMATION FOR CHAPTER {target_num} ---\n"
+                f"- Status: {status_text}\n"
+                f"- Title: {ch.get('title')}\n"
+                f"- Description/Outline: {ch.get('description')}\n"
+                f"- Current content (Length: {len(ch.get('content', ''))} characters):\n"
+                f"{ch.get('content') or 'This chapter is currently empty and has no written content.'}\n\n"
             )
             
-            # Gắn thêm một dòng tóm tắt các chương khác để AI không bị mất bối cảnh tổng thể
+            # Append a summary line of the other chapters so the AI maintains the overall context
             other_chapters = [str(c['chapterNumber']) for c in chapters if c['chapterNumber'] != target_num]
             if other_chapters:
-                content += f"--- BỐI CẢNH TỔNG THỂ ---\nSách có tổng cộng {len(chapters)} chương. Các chương khác gồm: {', '.join(other_chapters)}."
+                content += f"--- OVERALL CONTEXT ---\nThe book has a total of {len(chapters)} chapters. Other chapters include: {', '.join(other_chapters)}."
         else:
-            content = f"Không tìm thấy chương {target_num} trong dàn ý."
+            content = f"Chapter {target_num} could not be found in the outline."
     else:
-        # Fallback: Trả về mục lục nếu không có target nào xác định được
-        content = f"--- DÀN Ý TÓM TẮT ({len(chapters)} Chương) ---\n"
+        # Fallback: Return the summary outline if no specific target can be determined
+        content = f"--- SUMMARY OUTLINE ({len(chapters)} Chapters) ---\n"
         for ch in chapters:
-            content += f"- Chương {ch.get('chapterNumber')}: {ch.get('title')} (Mô tả: {ch.get('description')})\n"
+            content += f"- Chapter {ch.get('chapterNumber')}: {ch.get('title')} (Description: {ch.get('description')})\n"
 
-    # 3. Ghi đè tin nhắn thủ công để bảo toàn Context
+    # 3. Manually append the tool message to preserve the Context
     state["messages"].append(
         ToolMessage(
             tool_call_id=tool_call["id"],

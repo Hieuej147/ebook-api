@@ -15,7 +15,7 @@ from state import AgentState
 
 load_dotenv('.env')
 
-# Sử dụng TavilyClient đồng bộ (sync) thay vì AsyncTavilyClient
+# Using the synchronous TavilyClient instead of AsyncTavilyClient to manage threading manually
 tavily_api_key = os.getenv("TAVILY_API_KEY")
 tavily_client = TavilyClient(api_key=tavily_api_key)
 
@@ -47,7 +47,7 @@ def ExtractSources(sources: List[SourceInput]):  # pylint: disable=invalid-name,
     """Extract the most relevant sources and their information from raw search results."""
 
 
-# Wrapper bất đồng bộ (Async wrapper) chạy client sync trên thread pool
+# Asynchronous wrapper executing the synchronous client on a thread pool
 async def async_tavily_search(item: dict) -> List[Dict[str, Any]]:
     """Asynchronous wrapper for Tavily search API."""
     loop = asyncio.get_event_loop()
@@ -56,7 +56,7 @@ async def async_tavily_search(item: dict) -> List[Dict[str, Any]]:
     domains = item.get("domains")
     
     try:
-        # Chạy tavily_client.search (sync) trong thread pool
+        # Run tavily_client.search (synchronous) in an executor thread pool to avoid blocking the event loop
         tavily_response = await loop.run_in_executor(
             None,
             lambda: tavily_client.search(
@@ -67,7 +67,7 @@ async def async_tavily_search(item: dict) -> List[Dict[str, Any]]:
                 max_results=3
             )
         )
-        # Lọc kết quả với score > 0.45
+        # Filter results to only include those with a relevance score > 0.45
         return [search for search in tavily_response.get('results', []) if search.get('score', 0) > 0.45]
     except Exception as e:
         print(f"Error occurred during search for query '{item.get('query')}': {str(e)}")
@@ -80,7 +80,7 @@ async def search_node(state: AgentState, config: RunnableConfig):
     tool_call = ai_message.tool_calls[0]
     queries = tool_call["args"]["sub_queries"]
 
-    # Khởi tạo logs cho các truy vấn
+    # Initialize UI logs for the sub-queries
     for query in queries:
         state["logs"].append({
             "message": f"🌐 Searching the web: '{query.get('query')}'",
@@ -89,36 +89,39 @@ async def search_node(state: AgentState, config: RunnableConfig):
     await copilotkit_emit_state(config, state)
     
 
-    # Chạy các tác vụ search song song bằng asyncio.gather
+    # Run search tasks in parallel using asyncio.gather
     tasks = [async_tavily_search(query) for query in queries]
-    # return_exceptions=True giúp chặn crash toàn bộ pipeline nếu có 1 task thất bại
+    # return_exceptions=True prevents the entire pipeline from crashing if a single search task fails
     search_responses = await asyncio.gather(*tasks, return_exceptions=True)
 
     raw_search_results = []
     sources = state.get('sources', {})
 
-    # Tổng hợp dữ liệu
+    # Aggregate search data
     for i, response in enumerate(search_responses):
         if isinstance(response, Exception):
             print(f"Search task {i} failed with exception: {response}")
         else:
             raw_search_results.extend(response)
-        # Cập nhật trạng thái log
+        # Update UI log status to completed for this specific task
         state["logs"][i]["done"] = True
         await copilotkit_emit_state(config, state)
 
+    # Critical: Prevent streaming of internal extraction tool calls to the frontend UI
     hidden_config = copilotkit_customize_config(
         config, 
         emit_messages=False, 
-        emit_tool_calls=False # <-- Quan trọng nhất: chặn stream tool calls
+        emit_tool_calls=False 
     )
     model = get_model(state)
+    
     ainvoke_kwargs = {}
     if model.__class__.__name__ in ["ChatOpenAI"]:
         ainvoke_kwargs["parallel_tool_calls"] = False
 
     raw_results_str = json.dumps(raw_search_results, indent=2)
 
+    # Trigger a sub-LLM call to extract and curate the best sources from the raw results
     ai_response = await model.bind_tools(
         [ExtractSources], tool_choice="ExtractSources", **ainvoke_kwargs
     ).ainvoke(
@@ -136,6 +139,8 @@ async def search_node(state: AgentState, config: RunnableConfig):
         ],
         hidden_config,
     )
+    
+    # Clear logs before next cycle
     state["logs"] = []
     await copilotkit_emit_state(config, state)
 
@@ -144,6 +149,7 @@ async def search_node(state: AgentState, config: RunnableConfig):
 
     tool_msg_content = "Added the following curated sources:\n"
     
+    # Append the newly curated sources to the global agent state
     for src in extracted_sources:
         url = src.get("url")
         if url and url not in state["sources"]:
@@ -153,6 +159,7 @@ async def search_node(state: AgentState, config: RunnableConfig):
                 "content": src.get("content", "")
             }
             tool_msg_content += f"- {url}\n"
+            
     state["messages"].append(
         ToolMessage(
             tool_call_id=ai_message.tool_calls[0]["id"],

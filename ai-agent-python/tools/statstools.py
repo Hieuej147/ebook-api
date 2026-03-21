@@ -16,14 +16,17 @@ NESTJS_BASE_URL = os.getenv("NESTJS_BASE_URL", "http://localhost:3000")
 Period = Literal["today", "week", "month", "year"]
 
 # ============================
-# TOOL 1: Overview (tất cả)
+# TOOL 1: Overview Statistics
 # ============================
 class OverviewStatsInput(BaseModel):
-    period: Period = Field(default="month", description="Khoảng thời gian: today, week, month, year")
+    period: Period = Field(default="month", description="Time period: 'today', 'week', 'month', or 'year'")
 
 @tool("get_overview_stats", args_schema=OverviewStatsInput)
 def get_overview_stats(period: str = "month"):
-    """Lấy tổng quan thống kê: doanh thu, người dùng, đơn hàng, sách. Dùng khi user hỏi tổng quan dashboard."""
+    """
+    Retrieve overview statistics: revenue, users, orders, and books. 
+    Use this tool when the user asks for a general dashboard overview.
+    """
     pass
 
 async def overview_stats_node(state: AgentState, config: RunnableConfig):
@@ -31,12 +34,13 @@ async def overview_stats_node(state: AgentState, config: RunnableConfig):
     tool_call = ai_message.tool_calls[0]
     period = tool_call["args"].get("period", "month")
 
+    # Log UI status
     state["logs"] = state.get("logs", [])
-    state["logs"].append({"message": f"📊 Đang lấy thống kê tổng quan ({period})...", "done": False})
+    state["logs"].append({"message": f"📊 Fetching overview statistics ({period})...", "done": False})
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
-        # ✅ Gọi cả overview + chart cùng lúc
+        # ✅ Concurrently fetch overview data and all related charts to optimize speed
         overview_res, rev_chart, usr_chart, ord_chart, book_chart = await asyncio.gather(
             client.get(f"{NESTJS_BASE_URL}/stats/overview", params={"period": period}),
             client.get(f"{NESTJS_BASE_URL}/stats/revenue/chart", params={"period": period}),
@@ -44,8 +48,10 @@ async def overview_stats_node(state: AgentState, config: RunnableConfig):
             client.get(f"{NESTJS_BASE_URL}/stats/orders/chart", params={"period": period}),
             client.get(f"{NESTJS_BASE_URL}/stats/books/chart", params={"period": period}),
         )
+        
+        # Construct the final data payload
         data = {
-            **overview_res.json(),  # spread toàn bộ overview data
+            **overview_res.json(),  # Spread the entire overview data
             "charts": {
                 "revenue_chart": rev_chart.json(),
                 "users_chart": usr_chart.json(),
@@ -54,9 +60,11 @@ async def overview_stats_node(state: AgentState, config: RunnableConfig):
             }
         }
 
+    # Update UI status to completed
     state["logs"][-1]["done"] = True
     await copilotkit_emit_state(config, state)
 
+    # Append the JSON response to the state messages
     state["messages"].append(ToolMessage(
         tool_call_id=tool_call["id"],
         name=tool_call["name"],
@@ -64,12 +72,13 @@ async def overview_stats_node(state: AgentState, config: RunnableConfig):
     ))
     return state
 
+
 class QuickStatsInput(BaseModel):
-    period: Period = Field(default="month")
+    period: Period = Field(default="month", description="Time period: 'today', 'week', 'month', or 'year'")
 
 @tool("get_quick_stats", args_schema=QuickStatsInput)
 def get_quick_stats(period: str = "month"):
-    """Lấy quick stats: conversion rate, avg rating, return rate."""
+    """Retrieve quick statistics metrics such as conversion rate, average rating, and return rate."""
     pass
 
 async def quick_stats_node(state: AgentState, config: RunnableConfig):
@@ -78,13 +87,14 @@ async def quick_stats_node(state: AgentState, config: RunnableConfig):
     period = tool_call["args"].get("period", "month")
 
     async with httpx.AsyncClient() as client:
-        # Tính từ overview + order stats
+        # Calculate derived metrics from overview and order endpoints
         overview, orders = await asyncio.gather(
             client.get(f"{NESTJS_BASE_URL}/stats/overview", params={"period": period}),
             client.get(f"{NESTJS_BASE_URL}/stats/orders", params={"period": period}),
         )
         ov = overview.json()
         od = orders.json()
+        
         data = {
             "period": period,
             "conversion_rate": round(od.get("completion_rate", 0) / 10, 2),
@@ -98,15 +108,20 @@ async def quick_stats_node(state: AgentState, config: RunnableConfig):
         content=json.dumps(data, ensure_ascii=False)
     ))
     return state
+
+
 # ============================
-# TOOL 2: Doanh thu
+# TOOL 2: Revenue Statistics
 # ============================
 class RevenueStatsInput(BaseModel):
-    period: Period = Field(default="month", description="Khoảng thời gian: today, week, month, year")
+    period: Period = Field(default="month", description="Time period: 'today', 'week', 'month', or 'year'")
 
 @tool("get_revenue_stats", args_schema=RevenueStatsInput)
 def get_revenue_stats(period: str = "month"):
-    """Lấy thống kê doanh thu: tổng revenue, so sánh kỳ trước, top sách bán chạy, đơn hàng theo status."""
+    """
+    Retrieve detailed revenue statistics: total revenue, period-over-period comparison, 
+    top-selling books, and orders categorized by status.
+    """
     pass
 
 async def revenue_stats_node(state: AgentState, config: RunnableConfig):
@@ -115,7 +130,7 @@ async def revenue_stats_node(state: AgentState, config: RunnableConfig):
     period = tool_call["args"].get("period", "month")
 
     state["logs"] = state.get("logs", [])
-    state["logs"].append({"message": f"💰 Đang lấy dữ liệu doanh thu ({period})...", "done": False})
+    state["logs"].append({"message": f"💰 Fetching revenue data ({period})...", "done": False})
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
@@ -128,20 +143,23 @@ async def revenue_stats_node(state: AgentState, config: RunnableConfig):
     state["messages"].append(ToolMessage(
         tool_call_id=tool_call["id"],
         name=tool_call["name"],
-        content=json.dumps(data, ensure_ascii=False)  # ✅ thay str(data)
+        content=json.dumps(data, ensure_ascii=False)  # ✅ using json.dumps instead of str()
     ))
     return state
 
 
 # ============================
-# TOOL 3: Người dùng
+# TOOL 3: User Statistics
 # ============================
 class UserStatsInput(BaseModel):
-    period: Period = Field(default="month", description="Khoảng thời gian: today, week, month, year")
+    period: Period = Field(default="month", description="Time period: 'today', 'week', 'month', or 'year'")
 
 @tool("get_user_stats", args_schema=UserStatsInput)
 def get_user_stats(period: str = "month"):
-    """Lấy thống kê người dùng: tổng users, users mới, active buyers, NORMAL vs PREMIUM."""
+    """
+    Retrieve user statistics: total users, newly registered users, 
+    active buyers, and the distribution of NORMAL vs PREMIUM accounts.
+    """
     pass
 
 async def user_stats_node(state: AgentState, config: RunnableConfig):
@@ -150,7 +168,7 @@ async def user_stats_node(state: AgentState, config: RunnableConfig):
     period = tool_call["args"].get("period", "month")
 
     state["logs"] = state.get("logs", [])
-    state["logs"].append({"message": f"👥 Đang lấy dữ liệu người dùng ({period})...", "done": False})
+    state["logs"].append({"message": f"👥 Fetching user data ({period})...", "done": False})
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
@@ -163,20 +181,23 @@ async def user_stats_node(state: AgentState, config: RunnableConfig):
     state["messages"].append(ToolMessage(
         tool_call_id=tool_call["id"],
         name=tool_call["name"],
-        content=json.dumps(data, ensure_ascii=False)  # ✅ thay str(data)
+        content=json.dumps(data, ensure_ascii=False)  
     ))
     return state
 
 
 # ============================
-# TOOL 4: Đơn hàng
+# TOOL 4: Order Statistics
 # ============================
 class OrderStatsInput(BaseModel):
-    period: Period = Field(default="month", description="Khoảng thời gian: today, week, month, year")
+    period: Period = Field(default="month", description="Time period: 'today', 'week', 'month', or 'year'")
 
 @tool("get_order_stats", args_schema=OrderStatsInput)
 def get_order_stats(period: str = "month"):
-    """Lấy thống kê đơn hàng: pending, completed, cancelled, completion rate, avg order value."""
+    """
+    Retrieve order statistics: pending, completed, cancelled orders, 
+    overall completion rate, and average order value.
+    """
     pass
 
 async def order_stats_node(state: AgentState, config: RunnableConfig):
@@ -185,7 +206,7 @@ async def order_stats_node(state: AgentState, config: RunnableConfig):
     period = tool_call["args"].get("period", "month")
 
     state["logs"] = state.get("logs", [])
-    state["logs"].append({"message": f"📦 Đang lấy dữ liệu đơn hàng ({period})...", "done": False})
+    state["logs"].append({"message": f"📦 Fetching order data ({period})...", "done": False})
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
@@ -198,17 +219,20 @@ async def order_stats_node(state: AgentState, config: RunnableConfig):
     state["messages"].append(ToolMessage(
         tool_call_id=tool_call["id"],
         name=tool_call["name"],
-        content=json.dumps(data, ensure_ascii=False)  # ✅ thay str(data)
+        content=json.dumps(data, ensure_ascii=False)  
     ))
     return state
 
 
 # ============================
-# TOOL 5: Sách
+# TOOL 5: Book Statistics
 # ============================
 @tool("get_book_stats")
 def get_book_stats():
-    """Lấy thống kê sách: DRAFT vs PUBLISHED, sách sắp hết hàng, phân bổ theo category."""
+    """
+    Retrieve book statistics: DRAFT vs PUBLISHED statuses, 
+    books that are running out of stock, and distribution across categories.
+    """
     pass
 
 async def book_stats_node(state: AgentState, config: RunnableConfig):
@@ -216,7 +240,7 @@ async def book_stats_node(state: AgentState, config: RunnableConfig):
     tool_call = ai_message.tool_calls[0]
 
     state["logs"] = state.get("logs", [])
-    state["logs"].append({"message": "📚 Đang lấy dữ liệu sách...", "done": False})
+    state["logs"].append({"message": "📚 Fetching book inventory and statistics...", "done": False})
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
@@ -229,12 +253,14 @@ async def book_stats_node(state: AgentState, config: RunnableConfig):
     state["messages"].append(ToolMessage(
         tool_call_id=tool_call["id"],
         name=tool_call["name"],
-        content=json.dumps(data, ensure_ascii=False)  # ✅ thay str(data)
+        content=json.dumps(data, ensure_ascii=False) 
     ))
     return state
 
 
-# Export tất cả tools và nodes
+# ============================
+# EXPORTS: Tools, Nodes, and Routing
+# ============================
 STATS_TOOLS = [
     get_overview_stats,
     get_revenue_stats,
