@@ -36,9 +36,7 @@ export class BooksService {
       where: { sku: rest.sku },
     });
     if (existingSku) {
-      throw new ConflictException(
-        `Book with SKU ${rest.sku} already exist`,
-      );
+      throw new ConflictException(`Book with SKU ${rest.sku} already exist`);
     }
 
     const book = await this.prisma.book.create({
@@ -72,7 +70,7 @@ export class BooksService {
 
   // find all for customers
   async findAllForCustomers(queryDto: QueryBookDto) {
-    const { search, page = 1, limit = 10 } = queryDto;
+    const { search, page = 1, limit = 10, category } = queryDto;
 
     // 1. Điều kiện mặc định: Chỉ lấy sách "sạch" và đang bật
     const where: Prisma.BookWhereInput = {
@@ -82,6 +80,7 @@ export class BooksService {
       category: {
         isActive: true, // Chỉ lấy sách nếu Danh mục của nó cũng đang bật
       },
+      categoryId: category,
     };
 
     // 3. Tìm kiếm theo từ khóa
