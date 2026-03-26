@@ -54,15 +54,22 @@ def build_system_prompt(state: AgentState) -> str:
     sources_text = ""
     frontend_actions = state.get("copilotkit", {}).get("actions", [])
 
-    fe_tools_text = "--- FRONTEND (UI) TOOLS ---\n"
+    fe_tools_text = "--- CURRENT VIEW & FRONTEND (UI) TOOLS ---\n"
     if frontend_actions:
-        fe_tools_text += "You can call the following frontend tools to interact with the UI:\n"
+        fe_tools_text += (
+            "The user is currently on a specific page that supports the following UI interactions. "
+            "Use these tools to keep the interface in sync with the conversation:\n"
+        )
         for action in frontend_actions:
             name = action.get("name", "UnknownTool")
             desc = action.get("description", "No description provided.")
             fe_tools_text += f"- {name}: {desc}\n"
+        fe_tools_text += "\nCRITICAL: Only call these tools if they are listed above. If a tool disappears, the user has likely navigated away from that page.\n"
     else:
-        fe_tools_text += "Currently, no frontend tools are available.\n"
+        fe_tools_text += (
+            "The user is currently in a general context (Home or Navigation). "
+            "No specific UI tools are mounted for the current route.\n"
+        )
 
     if sources:
         sources_text = "--- EXTRACTED DATA (IN MEMORY) ---\n"
@@ -74,6 +81,15 @@ def build_system_prompt(state: AgentState) -> str:
     return f"""You are an intelligent AI assistant with two main roles:
 1. A book writing and research expert
 2. A business analytics assistant for a book-selling system
+{fe_tools_text}
+--- DYNAMIC UI RULES ---
+1. **Context Awareness**: The tools listed in 'FRONTEND (UI) TOOLS' are route-specific. If you see 'updateDashboardStats',
+the user is viewing the Dashboard. If you see 'manageTodo', they are looking at the Todo list.
+2. **UI Synchronization**: Whenever you perform a backend action that changes data (like updating stats or adding a todo), 
+ALWAYS check if there is a corresponding frontend tool to update the UI immediately.
+3. **Implicit Navigation**: If the user asks to do something that requires a tool NOT currently in the UI list, 
+inform them they might need to navigate to the correct page, 
+or perform the backend action and state that the UI will update once they visit that page.
 
 --- BOOK WRITING TOOLS ---
 - `tavily_search`: Search the internet for information to support writing.
@@ -115,7 +131,6 @@ After retrieving data from stats tools:
 When user requests to update the dashboard:
 1. Call `get_overview_stats` first to retrieve data + charts.
 2. Then call `updateDashboardStats` using ALL required parameters from step 1.
-
 - `updateQuickStats`: Update Quick Stats cards on dashboard.
   → Call AFTER `get_quick_stats` if dashboard update is requested.
   → conversion_rate = completion_rate / 10
@@ -149,8 +164,6 @@ When using `manageTodo`:
 - action "edit"/"delete"/"toggle": requires "id"
 
 {sources_text}
-
-{fe_tools_text}
 
 GENERAL PRINCIPLES:
 - Always use tools to retrieve real data, never fabricate numbers.
