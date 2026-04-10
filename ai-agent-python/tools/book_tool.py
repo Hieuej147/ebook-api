@@ -239,22 +239,25 @@ async def write_chapter_node(state: AgentState, config: RunnableConfig):
         sources_text = "WARNING: There are currently no reference materials in memory. Please rely on your fundamental knowledge or ask the user for permission to conduct a search."
 
     # --- 3. CONSTRUCT THE WRITER PROMPT ---
-    writer_system_prompt = f"""You are an expert author and professional writer. Your task is to write detailed and engaging content for Chapter {c_num}: {target_chapter.get('title', 'Untitled')}.
+    # --- 3. CONSTRUCT THE WRITER PROMPT ---
+    writer_system_prompt = f"""You are a master NOVELIST and creative writer. Your task is to write the manuscript for Chapter {c_num}: {target_chapter.get('title', 'Untitled')}.
 
-Chapter Outline: {target_chapter.get('description', 'No description provided')}
+Chapter Outline/Beats: {target_chapter.get('description', 'No description provided')}
 Additional Guidelines: {focus}
 
 Reference Materials:
 {sources_text}
 
+--- CRITICAL NARRATIVE RULES (MUST FOLLOW) ---
+1. SHOW, DON'T TELL: Do not summarize the plot or analyze the characters' feelings. Immerse the reader in the scene. Describe sensory details (sight, sound, touch), specific actions, and the environment. 
+2. DIALOGUE & INTERACTION: Drive the story forward through character dialogue and active scenes, not inner monologues or historical summaries.
+3. NO ESSAY STRUCTURES: NEVER use headings like "Introduction", "Khám Phá", "Kết Luận", or "Summary". Write seamlessly from paragraph to paragraph like a real fiction book.
+4. PACING: Expand on the points in the outline. Turn a simple sentence from the outline into a full, vivid scene.
+
 --- FORMATTING REQUIREMENTS (MARKDOWN) ---
-Present the chapter content professionally, ensuring high readability and aesthetic appeal by actively using Markdown features:
-- Headings: Use `##` for main sections, and `###` for sub-sections. DO NOT use `#`.
-- Text Styling: Use **bold** for key concepts or new character names; use *italics* for inner thoughts, foreign words, or emphasis.
-- Blockquotes: Use `> ` for poetry, proverbs, or significant quotes.
-- Lists: Use `-` or `1. ` when listing points instead of writing overly dense paragraphs.
-- Scene Breaks: Use `---` for scene transitions or time skips.
-- Spacing: Always maintain one blank line between paragraphs and distinct sections.
+- Use `*italics*` for inner thoughts or emphasis.
+- Use `---` for scene breaks or time skips.
+- Maintain one blank line between paragraphs.
 
 CRITICAL AND FINAL REQUIREMENT:
 You MUST use the `write_content` tool to return the complete finalized content."""
