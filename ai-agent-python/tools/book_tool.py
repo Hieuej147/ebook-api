@@ -9,6 +9,7 @@ from config import get_model
 from langgraph.types import interrupt
 
 
+
 class ChapterSchema(BaseModel):
     chapterNumber: int = Field(..., description="Sequential chapter number")
     title: str = Field(..., description="Chapter title")

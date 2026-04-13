@@ -62,5 +62,6 @@ ai-agent-python/.venv/
 ai-agent-python/__pycache__/
 ai-agent-python/.env
 ai-agent-python/*.pyc
+ai-agent-python/draw_graph.py
 
 

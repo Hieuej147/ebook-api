@@ -35,6 +35,9 @@ BOOK_AGENT_TOOLS = [
 def build_book_prompt(state: AgentState) -> str:
     sources = state.get("sources", {})
     sources_text = ""
+    task_context = ""
+    if state.get("worker_task"):
+        task_context = f"\n--- YOUR TASK FROM SUPERVISOR ---\n{state['worker_task']}\nFocus ONLY on completing this task."
 
     if sources:
         sources_text = "\n--- EXTRACTED DATA (IN MEMORY) ---\n"
@@ -59,6 +62,10 @@ GENERAL PRINCIPLES:
 - If data already exists in "EXTRACTED DATA", reuse it instead of searching again.
 - Always read chapter content before editing it.
 {sources_text}
+
+--- FINAL REPORT INSTRUCTION ---
+    IMPORTANT: You are a backend worker reporting to the Supervisor. You do NOT talk to the user directly.
+    Once you complete the requested task, output a brief internal summary of what you accomplished. The Supervisor will use your summary to reply to the user.
 """
 
 
@@ -69,7 +76,7 @@ async def book_agent_node(state: AgentState, config: RunnableConfig):
     model = get_model(state)
     hidden_config = copilotkit_customize_config(
         config,
-        emit_messages=False, 
+        emit_messages=False,
     )
     ainvoke_kwargs = {}
     if model.__class__.__name__ in ["ChatOpenAI"]:
@@ -91,7 +98,13 @@ async def book_agent_node(state: AgentState, config: RunnableConfig):
             tool_name = ai_message.tool_calls[0]["name"]
             goto = BOOK_ROUTING_FULL.get(tool_name, END)
 
-    return Command(goto=goto, update={"messages": [response]})
+        return Command(goto=goto, update={"messages": [response]})
+    else:
+        return Command(
+            goto=END, 
+            update={"worker_report": ai_message.content} 
+        )
+
 
 
 def build_book_subgraph():

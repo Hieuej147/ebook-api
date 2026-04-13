@@ -68,7 +68,7 @@ export class ExportDocController {
 
       // Gửi file duy nhất 1 lần ở đây
       res.send(buffer);
-    } catch (error) {
+    } catch (error: any) {
       console.error('PDF Export Error:', error);
 
       // CHỈ gửi lỗi JSON nếu headers chưa được gửi đi

@@ -4,11 +4,11 @@ from copilotkit import CopilotKitState
 from langgraph.graph.message import add_messages
 
 
-# 1. Những gì nhận vào từ FE
+
 class InputState(CopilotKitState):
     user_request: str
 
-# 2. Những gì trả về cho FE (Dùng cho useAgent hook)
+
 class OutputState(CopilotKitState):
     sections: List[dict]
     logs: List[dict]
@@ -20,9 +20,9 @@ class Chapter(TypedDict):
     description: str
     content: Optional[str]
 
-class Book(TypedDict, total=False): # total=False cho phép các field có thể bị thiếu lúc khởi tạo
+class Book(TypedDict, total=False): 
     title: str
-    author: str         # FE phải có trường này
+    author: str        
     topic: Optional[str]
     writingStyle: str
     chapters: List[Chapter]
@@ -35,11 +35,14 @@ class Source(TypedDict, total=False):
     url: str
     title: str
     content: str
-    raw_content: str    # Rất quan trọng vì extract_node của bạn có dùng trường này
+    raw_content: str
     score: float
 class AgentState(CopilotKitState):
     book: Book
     selectedChapterNumber: int
     sources: Dict[str, Source]
-    logs: List[Log] # list of dicts logs to be sent to frontend with 'message', 'status'
+    logs: List[Log] 
+    worker_task: Optional[str]
+    worker_report: Optional[str]
+    active_worker: Optional[str]
     

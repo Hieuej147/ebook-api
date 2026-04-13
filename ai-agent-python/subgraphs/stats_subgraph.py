@@ -77,6 +77,15 @@ ALWAYS use tools to retrieve real data, never fabricate numbers.
 async def stats_agent_node(state: AgentState, config: RunnableConfig):
     frontend_tools = state.get("copilotkit", {}).get("actions", [])
     all_tools = STATS_TOOLS + frontend_tools
+    task_context = ""
+    if state.get("worker_task"):
+        task_context = f"\n--- YOUR TASK FROM SUPERVISOR ---\n{state['worker_task']}\nFocus ONLY on completing this task."
+    
+    final_prompt = STATS_SYSTEM_PROMPT + task_context + """
+    \n--- FINAL REPORT INSTRUCTION ---
+    IMPORTANT: You are a backend worker reporting to the Supervisor. You do NOT talk to the user directly.
+    When you have finished retrieving data or updating the dashboard, output a concise report summarizing the actions taken and the data found. The Supervisor will read this to answer the user.
+    """
 
     model = get_model(state)
     hidden_config = copilotkit_customize_config(
@@ -103,9 +112,12 @@ async def stats_agent_node(state: AgentState, config: RunnableConfig):
             tool_name = ai_message.tool_calls[0]["name"]
             goto = STATS_ROUTING.get(tool_name, END)
 
-    return Command(goto=goto, update={"messages": [response]})
-
-
+        return Command(goto=goto, update={"messages": [response]})
+    else:
+        return Command(
+            goto=END, 
+            update={"worker_report": ai_message.content}
+        )
 def build_stats_subgraph():
     graph = StateGraph(AgentState)
 
