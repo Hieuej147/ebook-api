@@ -2,25 +2,25 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-# Copy file cấu hình package vào trước để tận dụng cache của Docker
+# 1. Copy config files
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Ép npm cài đặt TẤT CẢ thư viện (bao gồm cả devDependencies)
-# Bước này cực kỳ quan trọng để có @nestjs/cli và typescript phục vụ cho việc build
-RUN npm install --include=dev
+# 2. Cài đặt toàn bộ (để có Nest CLI và TS để build)
+RUN npm install --legacy-peer-deps
 
-# Copy toàn bộ source code vào
+# 3. Copy source code và build
 COPY . .
-
-# Tạo Prisma Client
 RUN npx prisma generate
-
-# Build code (bây giờ chắc chắn sẽ thành công vì đã có Nest CLI)
 RUN npm run build
 
-# Xóa các thư viện dev sau khi build xong để làm nhẹ Docker image
-RUN npm install --omit=dev --ignore-scripts && npm cache clean --force
+# 4. Bước then chốt: Tỉa bỏ devDependencies để nhẹ image
+# Chúng ta dùng 'npm prune' sẽ sạch sẽ hơn
+RUN npm prune --omit=dev && npm cache clean --force
+
+# 5. Quan trọng: Nếu bạn dùng Prisma, phải đảm bảo nó không bị xóa mất
+# Lệnh generate lại một lần nữa để chắc chắn Client khớp với node_modules mới
+RUN npx prisma generate
 
 EXPOSE 3000
 
