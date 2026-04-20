@@ -25,7 +25,7 @@ export class PaymentsService {
       throw new Error('STRIPE_SECRET_KEY is missing in .env file');
     }
     this.stripe = new Stripe(apiKey, {
-      apiVersion: '2026-01-28.clover',
+      apiVersion: '2026-02-25.clover',
     });
   }
 
