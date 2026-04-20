@@ -16,6 +16,7 @@ import { ExportDocModule } from './module/export-doc/export-doc.module';
 import { StatsModule } from './module/stats/stats.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import { EbedingModule } from './module/embeding/embeding.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -53,6 +54,7 @@ import KeyvRedis from '@keyv/redis';
     ChaptersModule,
     ExportDocModule,
     StatsModule,
+    EbedingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

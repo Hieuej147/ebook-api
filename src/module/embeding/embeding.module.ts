@@ -4,7 +4,7 @@ import { EmbedingService } from './embeding.service';
 import { EmbedingController } from './embeding.controller';
 
 @Module({
-  // controllers: [EmbedingController],
+  controllers: [EmbedingController],
   providers: [EmbedingService],
   exports: [EmbedingService], // QUAN TRỌNG: Phải export thì BooksService mới xài được
 })
