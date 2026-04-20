@@ -24,4 +24,4 @@ RUN npm run build
 RUN npm prune --omit=dev && npm cache clean --force
 
 # Lưu ý: Không dùng CMD ở đây, mình sẽ định nghĩa CMD trong docker-compose
-EXPOSE 3000 8123
+EXPOSE 3005 8123

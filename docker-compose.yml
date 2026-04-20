@@ -39,7 +39,7 @@ services:
       context: .
       dockerfile: Dockerfile # Sử dụng Dockerfile tổng (đã cài NestJS + LangGraph)
     ports:
-      - '3005:3000'
+      - '3005:3005'
     command: npm run start:prod
     environment:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
