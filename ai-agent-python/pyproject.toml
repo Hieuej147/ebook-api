@@ -23,5 +23,6 @@ dependencies = [
     "langchain-core>=1.2.12",
     "deepagents>=0.3.3",
     "pyjwt>=2.11.0",
+    "langchain-ollama>=1.0.1",
 ]
 

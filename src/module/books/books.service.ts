@@ -13,12 +13,14 @@ import {
 } from './dto';
 import { Book, Category, Prisma } from '@prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { EmbedingService } from '../embeding/embeding.service';
 
 @Injectable()
 export class BooksService {
   constructor(
     private prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    private readonly aiService: EmbedingService,
   ) {}
 
   // Create Book
@@ -49,6 +51,10 @@ export class BooksService {
         category: true,
       },
     });
+
+    this.aiService
+      .embedSingleBook(book.id, book.title, book.author, book.description)
+      .catch((e) => console.error('Lỗi khi chạy ngầm vector tạo sách:', e));
 
     return this.formatBook(book);
   }
@@ -225,7 +231,14 @@ export class BooksService {
         category: true,
       },
     });
-
+    this.aiService
+      .embedSingleBook(
+        updatedBook.id,
+        updatedBook.title,
+        updatedBook.author,
+        updatedBook.description,
+      )
+      .catch((e) => console.error('Lỗi khi chạy ngầm vector sửa sách:', e));
     return this.formatBook(updatedBook);
   }
 

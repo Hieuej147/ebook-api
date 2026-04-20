@@ -8,10 +8,12 @@ generator client {
   provider = "prisma-client-js"
   // output   = "../generated/prisma"
   moduleFormat = "cjs"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
+  extensions = [vector]
 }
 
 enum Role {
@@ -104,6 +106,7 @@ model Book {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
+  embedding Unsupported("vector(768)")?
 
   @@index([sku])
   @@index([categoryId])

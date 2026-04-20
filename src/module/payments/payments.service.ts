@@ -52,8 +52,29 @@ export class PaymentsService {
       where: { orderId },
     });
 
-    if (existingPayment && existingPayment.status === PaymentStatus.COMPLETED) {
-      throw new BadRequestException('payment already complted  for this order');
+    if (existingPayment) {
+      if (existingPayment.status === PaymentStatus.COMPLETED) {
+        throw new BadRequestException(
+          'Payment already completed for this order',
+        );
+      }
+
+      if (
+        existingPayment.status === PaymentStatus.PENDING &&
+        existingPayment.transactionId
+      ) {
+        const paymentIntent = await this.stripe.paymentIntents.retrieve(
+          existingPayment.transactionId,
+        );
+        return {
+          success: true,
+          data: {
+            clientSecret: paymentIntent.client_secret!,
+            paymentId: existingPayment.id,
+          },
+          message: 'Payment intent retrieved successfully',
+        };
+      }
     }
 
     const paymentIntent = await this.stripe.paymentIntents.create({

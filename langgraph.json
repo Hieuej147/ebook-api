@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "ebook_agent": "./src/module/ai-agent-bookstore/studio-agent.ts:graph"
+  },
+  "env": ".env"
+}
