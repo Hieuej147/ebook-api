@@ -2,9 +2,6 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-# 1. Cài đặt các công cụ biên dịch C++
-RUN apk add --no-cache python3 make g++
-
 # 2. Cài đặt LangGraph CLI thẳng vào hệ thống Docker (Thêm dòng này)
 RUN npm install -g @langchain/langgraph-cli
 
