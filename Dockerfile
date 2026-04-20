@@ -20,7 +20,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Xóa các thư viện dev sau khi build xong để làm nhẹ Docker image
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev --ignore-scripts && npm cache clean --force
 
 EXPOSE 3000
 
