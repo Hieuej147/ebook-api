@@ -5,6 +5,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   // Set Global validation
   app.useGlobalPipes(
     new ValidationPipe({
@@ -19,10 +20,17 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? 'http://localhost:4200',
+    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? [
+      'http://localhost:4200',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'x-copilotcloud-public-api-key',
+    ],
   });
 
   const config = new DocumentBuilder()
@@ -69,7 +77,7 @@ async function bootstrap() {
     `,
   });
 
-  await app.listen(process.env.PORT ?? 3005);
+  await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap().catch((error) => {
   Logger.error(`Error starting server ${error}`);

@@ -1,9 +1,9 @@
-version: '3.8'
-
 services:
   # 1. Database PostgreSQL + pgvector
   test-db:
     image: pgvector/pgvector:pg13
+    ports:
+      - '5432:5432'
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASS:-123}
@@ -37,13 +37,13 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile # Sử dụng Dockerfile tổng (đã cài NestJS + LangGraph)
+      dockerfile: Dockerfile
     ports:
       - '3005:3005'
-    command: npm run start:prod
     environment:
+      - RUN_MIGRATIONS=true # Kích hoạt chạy migration deploy qua entrypoint
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      - NODE_ENV=${NODE_ENV}
+      - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -62,31 +62,32 @@ services:
       - ebook-network
     restart: unless-stopped
 
-  # 4. LangGraph JS Agent (Chạy chung source code/image với api)
-  ai-agent:
+  # 4. LangGraph TS Agent
+  ai-agent-ts:
     build:
       context: .
-      dockerfile: Dockerfile # Dùng chung Dockerfile với api để không lỗi module
+      dockerfile: Dockerfile
+    working_dir: /app/agent-ts
     ports:
       - '8123:8123'
-    # Chạy lệnh langgraph dev ngay trên nền node của api
     command: npx @langchain/langgraph-cli dev --host 0.0.0.0 --port 8123 --no-browser
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
     depends_on:
-      api:
-        condition: service_started # Đợi api khởi động rồi mới chạy agent
+      - api
     networks:
       - ebook-network
     restart: unless-stopped
 
-  # 5. Python AI Agent (Vẫn chạy riêng)
+  # 5. Python AI Agent
   ai-agent-python:
     build:
       context: ./ai-agent-python
       dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}

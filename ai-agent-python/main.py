@@ -40,7 +40,7 @@ async def auth_middleware(request: Request, call_next):
 add_langgraph_fastapi_endpoint(
     app=app,
     agent=LangGraphAGUIAgent(
-        name="default", # ID này phải khớp với id ở phía NestJS/Frontend
+        name="dashboard", # ID này phải khớp với id ở phía NestJS/Frontend
         description="Agent biên tập sách thông minh, hỗ trợ lập dàn ý và soạn thảo.",
         graph=graph,
     ),
