@@ -21,12 +21,12 @@ export class CopilotkitController {
       agents: {
         ebook_agent: new LangGraphAgent({
           deploymentUrl:
-            this.config.get('PYTHON_AGENT_URL') || 'http://localhost:8123',
+            this.config.get('LANGGRAPH_TS_URL') || 'http://localhost:8123',
           graphId: 'ebook_agent',
         }),
         dashboard: new LangGraphHttpAgent({
           url:
-            this.config.get('TYPESCRIPT_AGENT_URL') ||
+            this.config.get('PYTHON_AGENT_URL') ||
             'http://localhost:8000/book-agent',
           headers: authHeader ? { authorization: authHeader } : {},
         }),

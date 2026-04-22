@@ -1,17 +1,20 @@
-# Dockerfile for the LangGraph JS agent.
-# Mirrors the user experience: npm install + langgraph-cli dev.
-FROM node:22-alpine
+# =============================================
+# Dockerfile dành riêng cho agent-ts
+# =============================================
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Copy agent package files
-COPY package.json ./
-COPY langgraph.json ./
-COPY tsconfig.json ./
-COPY src/ ./src/
+# Cài LangGraph CLI globally
+RUN npm install -g @langchain/langgraph-cli
 
-# Install dependencies
-RUN npm install
+# Copy package của agent-ts
+COPY agent-ts/package*.json ./
+
+RUN npm install --legacy-peer-deps
+
+# Copy source agent-ts
+COPY agent-ts/ .
 
 EXPOSE 8123
 

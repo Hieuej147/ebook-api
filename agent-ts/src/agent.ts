@@ -7,7 +7,12 @@ import { RunnableConfig } from '@langchain/core/runnables';
 import { tool } from '@langchain/core/tools';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { AIMessage, SystemMessage } from '@langchain/core/messages';
-import { MemorySaver, START, StateGraph, Annotation } from '@langchain/langgraph';
+import {
+  MemorySaver,
+  START,
+  StateGraph,
+  Annotation,
+} from '@langchain/langgraph';
 import { OllamaEmbeddings, ChatOllama } from '@langchain/ollama';
 import {
   convertActionsToDynamicStructuredTools,
@@ -57,11 +62,16 @@ const searchBooksTool = tool(
 
       console.log(`[DB RESULT] Tìm thấy ${books.length} cuốn sách.`);
       if (books.length > 0) {
-        console.log(`[DB RESULT] Tên sách:`, books.map((b: any) => b.title));
+        console.log(
+          `[DB RESULT] Tên sách:`,
+          books.map((b: any) => b.title),
+        );
       }
 
       if (!books.length) {
-        return JSON.stringify({ message: 'Không tìm thấy cuốn sách nào phù hợp.' });
+        return JSON.stringify({
+          message: 'Không tìm thấy cuốn sách nào phù hợp.',
+        });
       }
 
       return JSON.stringify(books);
@@ -75,7 +85,11 @@ const searchBooksTool = tool(
     description:
       'Tìm kiếm sách trong database dựa trên tiêu đề, tác giả, mô tả hoặc nhu cầu của khách hàng. Luôn ưu tiên dùng công cụ này khi khách hỏi về sách.',
     schema: z.object({
-      query: z.string().describe("Từ khóa tìm kiếm (vd: 'sách lập trình web', 'tiểu thuyết lãng mạn')"),
+      query: z
+        .string()
+        .describe(
+          "Từ khóa tìm kiếm (vd: 'sách lập trình web', 'tiểu thuyết lãng mạn')",
+        ),
       limit: z.number().optional().describe('Số sách tối đa, mặc định 4'),
     }),
   },
