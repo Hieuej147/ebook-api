@@ -62,7 +62,7 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       LANGGRAPH_TS_URL: ${LANGGRAPH_TS_URL}
-      PYTHON_AGENT_URL: ${LANGGRAPH_TS_URL}
+      PYTHON_AGENT_URL: ${PYTHON_AGENT_URL}
     depends_on:
       db:
         condition: service_healthy
@@ -80,7 +80,7 @@ services:
       context: .
       dockerfile: Dockerfile.agent
     ports:
-      - '8123:8123'
+      - '8123'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     environment:
@@ -101,7 +101,7 @@ services:
       context: ./ai-agent-python
       dockerfile: Dockerfile
     ports:
-      - '8000:8000'
+      - '8000'
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       JWT_SECRET: ${JWT_SECRET}
