@@ -11,7 +11,7 @@
     "db:test:studio": "dotenv -e .env -- prisma studio",
     "db:test:rm": "docker compose rm test-db -s -f -v",
     "prisma:test:deploy": "dotenv -e .env -- prisma migrate deploy",
-    "db:test:restart": "npm run db:test:rm && npm run db:test:up && sleep 1 && npm run prisma:test:deploy",
+    "db:test:restart": "pnpm run db:test:rm && pnpm run db:test:up && sleep 1 && pnpm run prisma:test:deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -24,9 +24,9 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --no-cache --config ./test/jest-e2e.json --watch",
     "test:e2e:test": "dotenv -e .env -- jest --watch --no-cache --config ./test/jest-e2e.json",
-    "dev:ts-agent": "cd agent-ts && npm run dev",
+    "dev:ts-agent": "cd agent-ts && pnpm run dev",
     "dev:py-agent": "cd ai-agent-python && uv run python main.py --reload",
-    "dev:all": "concurrently -c \"cyan.bold,green.bold,yellow.bold\" -n \"NEST-API,TS-AGENT,PY-AGENT\" \"npm run start:dev\" \"npm run dev:ts-agent\" \"npm run dev:py-agent\""
+    "dev:all": "concurrently -c \"cyan.bold,green.bold,yellow.bold\" -n \"NEST-API,TS-AGENT,PY-AGENT\" \"pnpm run start:dev\" \"pnpm run dev:ts-agent\" \"pnpm run dev:py-agent\""
   },
   "dependencies": {
     "@copilotkit/runtime": "^1.56.2",
