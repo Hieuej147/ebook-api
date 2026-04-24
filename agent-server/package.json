@@ -1,0 +1,23 @@
+{
+  "name": "agent-server",
+  "version": "1.0.0",
+  "description": "CopilotKit runtime server using Hono",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@ag-ui/client": "latest",
+    "@ag-ui/langgraph": "latest",
+    "@copilotkitnext/runtime": "latest",
+    "@hono/node-server": "latest",
+    "hono": "latest",
+    "rxjs": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}

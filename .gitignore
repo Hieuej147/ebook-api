@@ -1,70 +1,54 @@
-# compiled output
-/dist
-/node_modules
-/build
+# ========================
+# Node (all folders)
+# ========================
+node_modules/
 
-# Logs
-logs
+# ========================
+# Python (all folders)
+# ========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+venv/
+
+# ========================
+# Docker
+# ========================
+docker-compose.override.yml
+
+# ========================
+# Logs & temp
+# ========================
 *.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+logs/
+tmp/
+temp/
 
-# OS
-.DS_Store
+# ========================
+# System
+# ========================
+Thumbs.db
 
-# Tests
-/coverage
-/.nyc_output
+# ========================
+# LangGraph (global)
+# ========================
+.langgraph_api/
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
+# ========================
+# Lock files (tuỳ chọn)
+# ========================
+# Nếu dùng uv → giữ lại
+# uv.lock
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# Nếu không muốn commit:
+# uv.lock
 
-# dotenv environment variable files
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+**/.env
 
-# temp directory
-.temp
-.tmp
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-/generated/prisma
-
-# Python
-ai-agent-python/.venv/
-ai-agent-python/__pycache__/
-ai-agent-python/.env
-ai-agent-python/*.pyc
-ai-agent-python/draw_graph.py
-
-
-
-# LangGraph API
-.langgraph_api
+dist/
+**/dist
