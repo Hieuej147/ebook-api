@@ -68,7 +68,7 @@ app.get('/health', (c) => {
 });
 
 // CopilotKit endpoint
-app.use('/api/copilotkit/*', async (c) => {
+app.use('/api/copilotkit', async (c) => {
   const authHeader = c.req.header('authorization');
 
   console.log('AUTH:', authHeader); // debug
