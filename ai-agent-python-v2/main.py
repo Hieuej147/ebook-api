@@ -73,7 +73,7 @@ def agent_info():
 def main():
     """Hàm chạy uvicorn server."""
     # Lấy port từ env hoặc mặc định 8000
-    port = int(os.getenv("PORT2", "8001"))
+    port = int(os.getenv("PORT", "8001"))
     
     print("\n" + "="*50)
     print(f"🚀 AG-UI Agent Server đang khởi động tại:")
