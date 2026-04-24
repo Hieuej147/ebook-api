@@ -2,7 +2,9 @@ node_modules
 dist
 .env
 .env.*
-ai-agent-python
+ai-agent-python/
+ai-agent-python-v2/
+agent-server/ 
 *.log
 coverage
 .git
