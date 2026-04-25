@@ -72,8 +72,6 @@ app.get('/health', (c) => {
 app.use('/api/copilotkit/*', async (c) => {
   const authHeader = c.req.header('authorization');
 
-  console.log('AUTH:', authHeader); // debug
-
   // tạo runtime riêng cho mỗi request
   const runtime = new CopilotRuntime({
     agents: {
