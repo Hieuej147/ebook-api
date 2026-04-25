@@ -126,7 +126,7 @@ services:
   # ============================================
   ai-agent-python-v2:
     build:
-      context: ./ai-agent-python-2
+      context: ./ai-agent-python-v2
       dockerfile: Dockerfile
     expose:
       - '8001'
