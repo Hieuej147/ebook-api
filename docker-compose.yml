@@ -16,7 +16,8 @@ services:
       - ebook-network
     restart: unless-stopped
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-nest}']
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-nest}']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -138,6 +139,7 @@ services:
       TAVILY_API_KEY: ${TAVILY_API_KEY}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       LANGGRAPH_FAST_API: ${LANGGRAPH_FAST_API}
+      PORT2: ${PORT2}
       PORT: 8001
     depends_on:
       - api
@@ -161,6 +163,7 @@ services:
       PYTHON_AGENT_URL: http://ai-agent-python:8000/book-agent
       PYTHON_AGENT_V2_URL: http://ai-agent-python-v2:8001/book-agent
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      USE_PYTHON_V2: ${USE_PYTHON_V2}
     depends_on:
       - ai-agent-ts
       - ai-agent-python
