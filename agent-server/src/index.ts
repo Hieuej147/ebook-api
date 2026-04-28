@@ -30,8 +30,8 @@ const PORT = Number(process.env.PORT ?? 3001);
 const USE_PYTHON_V2 = process.env.USE_PYTHON_V2 === 'true';
 const activePythonUrl = USE_PYTHON_V2 ? PYTHON_AGENT_V2_URL : PYTHON_AGENT_URL;
 
-console.log(`🤖 Agent Server starting...`);
-console.log(`📡 LangGraph TS: ${LANGGRAPH_TS_URL}`);
+console.log(` Agent Server starting...`);
+console.log(`LangGraph TS: ${LANGGRAPH_TS_URL}`);
 console.log(
   `🐍 Python Agent: ${activePythonUrl} (${USE_PYTHON_V2 ? 'v2' : 'v1'})`,
 );
@@ -103,5 +103,5 @@ app.use('/api/copilotkit/*', async (c) => {
 serve({ fetch: app.fetch, port: PORT });
 
 console.log(
-  `✅ Agent Server running at http://localhost:${PORT}/api/copilotkit`,
+  `Agent Server running at http://localhost:${PORT}/api/copilotkit`,
 );

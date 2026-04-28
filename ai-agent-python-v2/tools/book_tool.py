@@ -36,6 +36,8 @@ async def outline_node(state: AgentState, config: RunnableConfig):
     ai_message = cast(AIMessage, state["messages"][-1])
     tool_call = ai_message.tool_calls[0]
     args = tool_call["args"]
+    state["active_worker"] = "outline_node"
+    await copilotkit_emit_state(config, state)
 
     # 2. Extract the list of chapters returned by the LLM
     chapters_data = args.get("chapters", [])
@@ -69,6 +71,8 @@ async def outline_node(state: AgentState, config: RunnableConfig):
             content=f"The outline has been successfully updated with {len(chapters_data)} chapters. Please ask the user if they would like to make any adjustments."
         )
     )
+    state["active_worker"] = ""
+    await copilotkit_emit_state(config, state)
     return state
 
 
@@ -102,6 +106,9 @@ async def edit_outline_node(state: AgentState, config: RunnableConfig):
 
     book = state.get("book", {})
     current_chapters = book.get("chapters", [])
+
+    state["active_worker"] = "edit_outline_node"
+    await copilotkit_emit_state(config, state)
 
     # Process each action requested by the AI
     for act in actions:
@@ -160,7 +167,10 @@ async def edit_outline_node(state: AgentState, config: RunnableConfig):
             content=f"Execution complete. The current outline now contains {len(current_chapters)} sequentially numbered chapters."
         )
     )
-
+    
+    state["active_worker"] = ""
+    await copilotkit_emit_state(config, state)
+    
     return state
 
 
@@ -195,6 +205,9 @@ async def write_chapter_node(state: AgentState, config: RunnableConfig):
     args = tool_call["args"]
     c_num = args.get("chapterNumber") or state.get("selectedChapterNumber", None)
     focus = args.get("focus_guidelines", "")
+    
+    state["active_worker"] = "write_chapter_node"
+    await copilotkit_emit_state(config, state)
 
     book = state.get("book", {})
     target_chapter = next((ch for ch in book.get("chapters", []) if ch["chapterNumber"] == c_num), None)
@@ -301,7 +314,10 @@ You MUST use the `write_content` tool to return the complete finalized content."
             content=f"Successfully drafted Chapter {c_num}. The generated content length is {len(generated_content)} characters and has been stored in memory."
         )
     )
-
+    
+    state["active_worker"] = ""
+    await copilotkit_emit_state(config, state)
+    
     return state
 
 
@@ -352,6 +368,9 @@ async def edit_chapter_content_node(state: AgentState, config: RunnableConfig):
         return {"messages": state["messages"]}
 
     current_content = target_chapter["content"]
+
+    state["active_worker"] = "edit_chapter_content_node"
+    await copilotkit_emit_state(config, state)
 
     # 2. Validate the existence of the text targeted for replacement
     if not search_text or search_text not in current_content:
@@ -414,6 +433,9 @@ async def edit_chapter_content_node(state: AgentState, config: RunnableConfig):
                 content=f"The user has REJECTED this edit. Please ask them how they would prefer to adjust the text."
             )
         )
+    
+    state["active_worker"] = ""
+    await copilotkit_emit_state(config, state)
 
     return state
 

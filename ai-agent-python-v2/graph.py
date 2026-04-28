@@ -24,7 +24,7 @@ from subgraphs.stats_subgraph import stats_subgraph
 load_dotenv('.env')
 
 # =====================================================================
-# 1. SUPERVISOR (QUẢN ĐỐC) - Dùng Structured Output & Command
+# 1. SUPERVISOR Dùng Structured Output & Command
 # =====================================================================
 class SupervisorRouter(BaseModel):
     """The necessary tool for LLM to return navigation decisions."""
