@@ -12,6 +12,33 @@ The public demo stack is:
 
 The dashboard Copilot runtime lives in the Next.js app at `/api/copilotkit`.
 
+## Repositories
+
+This demo is split into two public repositories. Clone both to run the full app:
+
+- Backend API: <https://github.com/Hieuej147/ebook-api>
+- Admin dashboard: <https://github.com/Hieuej147/ebook-dashboard>
+
+Recommended folder layout:
+
+```text
+your-workspace/
+  API-EBook/
+  Dashboard/
+    my-app/
+```
+
+Example:
+
+```bash
+mkdir ebook-demo
+cd ebook-demo
+
+git clone https://github.com/Hieuej147/ebook-api.git API-EBook
+mkdir Dashboard
+git clone https://github.com/Hieuej147/ebook-dashboard.git Dashboard/my-app
+```
+
 ## Requirements
 
 - Node.js 20+
@@ -19,12 +46,13 @@ The dashboard Copilot runtime lives in the Next.js app at `/api/copilotkit`.
 - Docker + Docker Compose
 - API keys listed below
 
-Keep `API-EBook` and `Dashboard/my-app` as sibling folders if you want to use the full Docker compose from this repo:
+Keep `API-EBook` and `Dashboard/my-app` in the layout above if you want to use the full Docker compose from this repo. The compose file builds the dashboard from `../Dashboard/my-app`.
 
 ```text
-/mnt/disk2/
+your-workspace/
   API-EBook/
-  Dashboard/my-app/
+  Dashboard/
+    my-app/
 ```
 
 ## Environment
@@ -62,7 +90,7 @@ SESSION_SECRET_KEY=change-me-min-32-characters-for-dashboard
 
 ## Run With Docker
 
-From `API-EBook`:
+From `API-EBook`, after cloning both repos:
 
 ```bash
 docker compose up --build
