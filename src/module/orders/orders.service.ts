@@ -24,22 +24,6 @@ export class OrdersService {
   ): Promise<OrderApiResponseDto<OrderResponseDto>> {
     const { items, shippingAddress } = createOrderDto;
 
-    for (const item of items) {
-      const book = await this.prisma.book.findUnique({
-        where: { id: item.bookId },
-      });
-
-      if (!book) {
-        throw new NotFoundException(`Product with ID ${item.bookId} not found`);
-      }
-
-      if (book.stock < item.quantity) {
-        throw new BadRequestException(
-          `Insufficient stock for book  ${book.title}.  Available: ${book.stock}, Requested: ${item.quantity}`,
-        );
-      }
-    }
-
     const total = items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0,
@@ -56,6 +40,22 @@ export class OrdersService {
     });
 
     const order = await this.prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const book = await tx.book.findUnique({
+          where: { id: item.bookId },
+        });
+
+        if (!book) {
+          throw new NotFoundException(`Product with ID ${item.bookId} not found`);
+        }
+
+        if (book.stock < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for book ${book.title}. Available: ${book.stock}, Requested: ${item.quantity}`,
+          );
+        }
+      }
+
       const newOrder = await tx.order.create({
         data: {
           userId,

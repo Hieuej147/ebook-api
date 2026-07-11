@@ -82,36 +82,6 @@ export class CategoryController {
     return await this.categoryService.findAll(queryDto);
   }
 
-  // Get category by ID
-  @Get(':id')
-  @ApiOperation({ summary: 'Get category by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Category details',
-    type: CategoryResponseDto,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Category not found',
-  })
-  async findOne(@Param('id') id: string): Promise<CategoryResponseDto> {
-    return await this.categoryService.findOne(id);
-  }
-
-  // Get category by slug
-  @Get('slug/:slug')
-  @ApiOperation({
-    summary: 'Get category by slug',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Category details',
-    type: CategoryResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Category not found' })
-  async findBySlug(@Param('slug') slug: string): Promise<CategoryResponseDto> {
-    return await this.categoryService.findBySlug(slug);
-  }
   // Get all category (Admin only)
   @Get('all/list')
   @ApiBearerAuth('JWT-auth')
@@ -130,6 +100,37 @@ export class CategoryController {
   })
   async findAllList() {
     return await this.categoryService.findAllList();
+  }
+
+  // Get category by slug
+  @Get('slug/:slug')
+  @ApiOperation({
+    summary: 'Get category by slug',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Category details',
+    type: CategoryResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Category not found' })
+  async findBySlug(@Param('slug') slug: string): Promise<CategoryResponseDto> {
+    return await this.categoryService.findBySlug(slug);
+  }
+
+  // Get category by ID
+  @Get(':id')
+  @ApiOperation({ summary: 'Get category by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Category details',
+    type: CategoryResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found',
+  })
+  async findOne(@Param('id') id: string): Promise<CategoryResponseDto> {
+    return await this.categoryService.findOne(id);
   }
 
   // Update category ( Admin only)

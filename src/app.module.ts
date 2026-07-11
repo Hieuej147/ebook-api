@@ -16,9 +16,20 @@ import { ExportDocModule } from './module/export-doc/export-doc.module';
 import { StatsModule } from './module/stats/stats.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import { EbedingModule } from './module/embeding/embeding.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
+    ThrottlerModule.forRoot([
+      {
+        ttl: 1000,
+        limit: 20,
+      },
+    ]),
 
     CacheModule.registerAsync({
       isGlobal: true,
@@ -26,14 +37,11 @@ import KeyvRedis from '@keyv/redis';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const redisUrl = configService.get<string>('REDIS_URL');
-
         if (!redisUrl) {
           console.warn('⚠️ REDIS_URL not found, using in-memory cache');
           return { ttl: 5 * 60 * 1000 };
         }
-
         console.log('✅ Connecting to Redis:', redisUrl);
-
         return {
           stores: [new KeyvRedis(redisUrl)],
           ttl: 5 * 60 * 1000,
@@ -53,8 +61,15 @@ import KeyvRedis from '@keyv/redis';
     ChaptersModule,
     ExportDocModule,
     StatsModule,
+    EbedingModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

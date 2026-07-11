@@ -69,7 +69,7 @@ export class ExportDocService {
               pageBreakBefore: true,
             }),
           );
-        } catch (error) {
+        } catch (error: any) {
           // throw new BadRequestException(
           //   `Could not embed image ${imageBuffer}`,
           //   error,
@@ -186,7 +186,7 @@ export class ExportDocService {
             chapter.content || '',
           );
           sections.push(...contentParagraph);
-        } catch (error) {
+        } catch (error: any) {
           throw new BadRequestException(
             `Error processing chapter ${index}`,
             error,
@@ -215,7 +215,7 @@ export class ExportDocService {
       const buffer = await Packer.toBuffer(doc);
       // 9. Return buffer
       return buffer;
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException('Error exporting document', error);
     }
   }

@@ -1,27 +1,61 @@
-FROM node:24-alpine
+# =============================================
+# STAGE 1: BUILDER
+# =============================================
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Copy file cấu hình package vào trước để tận dụng cache của Docker
-COPY package*.json ./
+# 1. Bơm pnpm vào môi trường Alpine
+RUN npm install -g pnpm
+
+# 2. Copy toàn bộ các file cấu hình cốt lõi của Workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
-# Ép npm cài đặt TẤT CẢ thư viện (bao gồm cả devDependencies)
-# Bước này cực kỳ quan trọng để có @nestjs/cli và typescript phục vụ cho việc build
-RUN npm install --include=dev
-
-# Copy toàn bộ source code vào
+# 3. Copy toàn bộ source code của các project con vào
+# (BẮT BUỘC để pnpm đọc được package.json trong các thư mục con và link workspace)
 COPY . .
 
-# Tạo Prisma Client
-RUN npx prisma generate
+# 4. Cài đặt toàn bộ dependencies cho cả mạng lưới Monorepo
+RUN pnpm install --frozen-lockfile
 
-# Build code (bây giờ chắc chắn sẽ thành công vì đã có Nest CLI)
-RUN npm run build
+# 5. Generate Prisma & Build NestJS
+RUN pnpm dlx prisma generate
+RUN pnpm build
 
-# Xóa các thư viện dev sau khi build xong để làm nhẹ Docker image
-RUN npm ci --omit=dev && npm cache clean --force
+# =============================================
+# STAGE 2: RUNNER
+# =============================================
+FROM node:24-alpine AS runner
+
+WORKDIR /app
+
+# 1. Cài pnpm cho stage runner
+RUN npm install -g pnpm
+
+# 2. Copy lại bộ khung cấu hình từ builder
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-lock.yaml ./
+COPY --from=builder /app/pnpm-workspace.yaml ./
+
+# 3. Cài production dependencies cho môi trường chạy
+RUN pnpm install --prod --frozen-lockfile
+
+# 4. Cài Prisma vào runtime (vì nó thường nằm ở devDependencies)
+RUN pnpm add prisma @prisma/client
+
+# 5. Copy Prisma config & schema
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./
+
+# 6. Generate lại Prisma Client trong môi trường prod
+RUN pnpm dlx prisma generate
+
+# 7. Copy kết quả build cuối cùng
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start:prod"]
+# 8. Chạy DB Migrate và khởi động Server bằng pnpm dlx
+CMD ["sh", "-c", "pnpm dlx prisma migrate deploy && node dist/src/main.js"]

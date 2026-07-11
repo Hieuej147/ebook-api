@@ -63,16 +63,9 @@ export class RefreshTokenStrategy extends PassportStrategy(
       refreshToken,
     );
 
-    // console.log('Kết quả verify Argon2:', refreshTokenMatches);
-
-    // if (!refreshTokenMatches) {
-    //   console.error(
-    //     'TOKEN KHÔNG KHỚP! DB có:',
-    //     user.refreshToken.substring(0, 15),
-    //   );
-    //   console.error('Gửi lên là:', refreshToken.substring(0, 15));
-    //   throw new UnauthorizedException('Invalid refresh does not match');
-    // }
+    if (!refreshTokenMatches) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
 
     return {
       id: user.id,

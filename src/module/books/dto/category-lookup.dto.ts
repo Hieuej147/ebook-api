@@ -1,5 +1,5 @@
 import { PickType } from '@nestjs/swagger';
-import { CategoryResponseDto } from 'src/module/category/dto';
+import { CategoryResponseDto } from '../../category/dto';
 
 export class CategoryLookupDto extends PickType(CategoryResponseDto, [
   'id',

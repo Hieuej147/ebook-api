@@ -1,6 +1,6 @@
 // stats/stats.controller.ts
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { StatsService } from './stats.service';
 import {
   OverviewStatsDto,
@@ -9,10 +9,17 @@ import {
   OrderStatsDto,
   BookStatsDto,
 } from './dto/stats-res.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorator/roles.decorator';
+import { Role } from '@prisma/client';
 
 type Period = 'today' | 'week' | 'month' | 'year';
 
 @ApiTags('Stats')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
+@ApiBearerAuth('JWT-auth')
 @Controller('stats')
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}

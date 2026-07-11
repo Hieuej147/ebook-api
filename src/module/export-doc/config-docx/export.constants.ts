@@ -27,7 +27,7 @@ export const DOCX_STYLES = {
 export const TYPOGRAPHY = {
   fonts: {
     serif: 'Times-Roman',
-    serifBold: 'TImes-Bold',
+    serifBold: 'Times-Bold',
     sans: 'Helvetica',
     sansBold: 'Helvetica-Bold',
     sansOblique: 'Helvetica-Oblique',

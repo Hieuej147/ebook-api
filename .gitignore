@@ -1,46 +1,59 @@
-# compiled output
-/dist
-/node_modules
-/build
+# ========================
+# Node (all folders)
+# ========================
+node_modules/
 
-# Logs
-logs
+# ========================
+# Python (all folders)
+# ========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+venv/
+
+# ========================
+# Docker
+# ========================
+docker-compose.override.yml
+
+# ========================
+# Logs & temp
+# ========================
 *.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+logs/
+tmp/
+temp/
 
-# OS
-.DS_Store
+# ========================
+# System
+# ========================
+Thumbs.db
 
-# Tests
-/coverage
-/.nyc_output
+# ========================
+# LangGraph (global)
+# ========================
+.langgraph_api/
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
+# ========================
+# Lock files (tuỳ chọn)
+# ========================
+# Nếu dùng uv → giữ lại
+# uv.lock
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# Nếu không muốn commit:
+# uv.lock
 
-# dotenv environment variable files
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+**/.env
+
+dist/
+**/dist
+
+.agents
 
 # temp directory
 .temp
@@ -63,6 +76,13 @@ ai-agent-python/__pycache__/
 ai-agent-python/.env
 ai-agent-python/*.pyc
 ai-agent-python/draw_graph.py
+ai-agent-python-v2/.venv/
+ai-agent-python-v2/__pycache__/
+ai-agent-python-v2/.env
+ai-agent-python-v2/*.pyc
 
-.langgraph_api
 uv.lock
+
+# Local-only agents, not part of the public demo setup
+agent-server/
+agent-ts/

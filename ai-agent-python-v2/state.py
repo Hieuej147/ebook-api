@@ -35,11 +35,12 @@ class Source(TypedDict, total=False):
     url: str
     title: str
     content: str
-    raw_content: str    # Rất quan trọng vì extract_node của bạn có dùng trường này
+    raw_content: str 
     score: float
 class AgentState(CopilotKitState):
     book: Book
     selectedChapterNumber: int
     sources: Dict[str, Source]
-    logs: List[Log] # list of dicts logs to be sent to frontend with 'message', 'status'
+    logs: List[Log]
+    active_worker: str
     

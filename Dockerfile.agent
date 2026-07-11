@@ -1,0 +1,21 @@
+# =============================================
+# Dockerfile dành riêng cho agent-ts
+# =============================================
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Cài LangGraph CLI globally
+RUN npm install -g @langchain/langgraph-cli
+
+# Copy package của agent-ts
+COPY agent-ts/package*.json ./
+
+RUN npm install --legacy-peer-deps
+
+# Copy source agent-ts
+COPY agent-ts/ .
+
+EXPOSE 8123
+
+CMD ["npx", "@langchain/langgraph-cli", "dev", "--host", "0.0.0.0", "--port", "8123", "--no-browser"]

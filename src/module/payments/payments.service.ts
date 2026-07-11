@@ -25,7 +25,7 @@ export class PaymentsService {
       throw new Error('STRIPE_SECRET_KEY is missing in .env file');
     }
     this.stripe = new Stripe(apiKey, {
-      apiVersion: '2026-01-28.clover',
+      apiVersion: '2026-02-25.clover',
     });
   }
 
@@ -52,8 +52,29 @@ export class PaymentsService {
       where: { orderId },
     });
 
-    if (existingPayment && existingPayment.status === PaymentStatus.COMPLETED) {
-      throw new BadRequestException('payment already complted  for this order');
+    if (existingPayment) {
+      if (existingPayment.status === PaymentStatus.COMPLETED) {
+        throw new BadRequestException(
+          'Payment already completed for this order',
+        );
+      }
+
+      if (
+        existingPayment.status === PaymentStatus.PENDING &&
+        existingPayment.transactionId
+      ) {
+        const paymentIntent = await this.stripe.paymentIntents.retrieve(
+          existingPayment.transactionId,
+        );
+        return {
+          success: true,
+          data: {
+            clientSecret: paymentIntent.client_secret!,
+            paymentId: existingPayment.id,
+          },
+          message: 'Payment intent retrieved successfully',
+        };
+      }
     }
 
     const paymentIntent = await this.stripe.paymentIntents.create({
@@ -133,10 +154,12 @@ export class PaymentsService {
     });
 
     if (order?.cartId) {
-      await this.prisma.cart.update({
-        where: { id: order.cartId },
-        data: { checkedOut: true },
-      });
+      await this.prisma.$transaction([
+        this.prisma.cart.update({
+          where: { id: order.cartId },
+          data: { checkedOut: true },
+        }),
+      ]);
     }
 
     return {

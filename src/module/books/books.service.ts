@@ -13,12 +13,14 @@ import {
 } from './dto';
 import { Book, Category, Prisma } from '@prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { EmbedingService } from '../embeding/embeding.service';
 
 @Injectable()
 export class BooksService {
   constructor(
     private prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    private readonly aiService: EmbedingService,
   ) {}
 
   // Create Book
@@ -49,6 +51,10 @@ export class BooksService {
         category: true,
       },
     });
+
+    this.aiService
+      .embedSingleBook(book.id, book.title, book.author, book.description)
+      .catch((e) => console.error('Lỗi khi chạy ngầm vector tạo sách:', e));
 
     return this.formatBook(book);
   }
@@ -225,11 +231,18 @@ export class BooksService {
         category: true,
       },
     });
-
+    this.aiService
+      .embedSingleBook(
+        updatedBook.id,
+        updatedBook.title,
+        updatedBook.author,
+        updatedBook.description,
+      )
+      .catch((e) => console.error('Lỗi khi chạy ngầm vector sửa sách:', e));
     return this.formatBook(updatedBook);
   }
 
-  // Update product stock
+  // Update product stock (atomic)
   async updateStock(id: string, quantity: number): Promise<BookResponseDto> {
     const book = await this.prisma.book.findUnique({
       where: { id },
@@ -245,8 +258,8 @@ export class BooksService {
     }
 
     const updatedBook = await this.prisma.book.update({
-      where: { id },
-      data: { stock: newStock },
+      where: { id, stock: { gte: quantity < 0 ? Math.abs(quantity) : 0 } },
+      data: { stock: { increment: quantity } },
       include: {
         category: true,
       },
@@ -255,7 +268,7 @@ export class BooksService {
     return this.formatBook(updatedBook);
   }
 
-  // Remove a product
+  // Remove a product (soft delete)
   async remove(id: string): Promise<{ message: string }> {
     const book = await this.prisma.book.findUnique({
       where: { id },
@@ -275,8 +288,9 @@ export class BooksService {
       );
     }
 
-    await this.prisma.book.delete({
+    await this.prisma.book.update({
       where: { id },
+      data: { deletedAt: new Date(), isActive: false },
     });
 
     return { message: 'Product deleted successfully' };

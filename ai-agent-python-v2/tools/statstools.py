@@ -10,8 +10,16 @@ from copilotkit.langchain import copilotkit_emit_state
 import json 
 import asyncio
 from state import AgentState
+from auth_context import current_auth_token
 
-NESTJS_BASE_URL = os.getenv("NESTJS_BASE_URL", "http://localhost:3000")
+NESTJS_BASE_URL = os.getenv("NESTJS_BASE_URL", "http://localhost:3005")
+
+def get_auth_headers() -> dict:
+    """Get auth headers from context variable."""
+    token = current_auth_token.get()
+    if token:
+        return {"Authorization": token}
+    return {}
 
 Period = Literal["today", "week", "month", "year"]
 
@@ -40,13 +48,14 @@ async def overview_stats_node(state: AgentState, config: RunnableConfig):
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
+        headers = get_auth_headers()
         # ✅ Concurrently fetch overview data and all related charts to optimize speed
         overview_res, rev_chart, usr_chart, ord_chart, book_chart = await asyncio.gather(
-            client.get(f"{NESTJS_BASE_URL}/stats/overview", params={"period": period}),
-            client.get(f"{NESTJS_BASE_URL}/stats/revenue/chart", params={"period": period}),
-            client.get(f"{NESTJS_BASE_URL}/stats/users/chart", params={"period": period}),
-            client.get(f"{NESTJS_BASE_URL}/stats/orders/chart", params={"period": period}),
-            client.get(f"{NESTJS_BASE_URL}/stats/books/chart", params={"period": period}),
+            client.get(f"{NESTJS_BASE_URL}/stats/overview", params={"period": period}, headers=headers),
+            client.get(f"{NESTJS_BASE_URL}/stats/revenue/chart", params={"period": period}, headers=headers),
+            client.get(f"{NESTJS_BASE_URL}/stats/users/chart", params={"period": period}, headers=headers),
+            client.get(f"{NESTJS_BASE_URL}/stats/orders/chart", params={"period": period}, headers=headers),
+            client.get(f"{NESTJS_BASE_URL}/stats/books/chart", params={"period": period}, headers=headers),
         )
         
         # Construct the final data payload
@@ -87,10 +96,11 @@ async def quick_stats_node(state: AgentState, config: RunnableConfig):
     period = tool_call["args"].get("period", "month")
 
     async with httpx.AsyncClient() as client:
+        headers = get_auth_headers()
         # Calculate derived metrics from overview and order endpoints
         overview, orders = await asyncio.gather(
-            client.get(f"{NESTJS_BASE_URL}/stats/overview", params={"period": period}),
-            client.get(f"{NESTJS_BASE_URL}/stats/orders", params={"period": period}),
+            client.get(f"{NESTJS_BASE_URL}/stats/overview", params={"period": period}, headers=headers),
+            client.get(f"{NESTJS_BASE_URL}/stats/orders", params={"period": period}, headers=headers),
         )
         ov = overview.json()
         od = orders.json()
@@ -134,7 +144,8 @@ async def revenue_stats_node(state: AgentState, config: RunnableConfig):
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
-        res = await client.get(f"{NESTJS_BASE_URL}/stats/revenue", params={"period": period})
+        headers = get_auth_headers()
+        res = await client.get(f"{NESTJS_BASE_URL}/stats/revenue", params={"period": period}, headers=headers)
         data = res.json()
 
     state["logs"][-1]["done"] = True
@@ -172,7 +183,8 @@ async def user_stats_node(state: AgentState, config: RunnableConfig):
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
-        res = await client.get(f"{NESTJS_BASE_URL}/stats/users", params={"period": period})
+        headers = get_auth_headers()
+        res = await client.get(f"{NESTJS_BASE_URL}/stats/users", params={"period": period}, headers=headers)
         data = res.json()
 
     state["logs"][-1]["done"] = True
@@ -210,7 +222,8 @@ async def order_stats_node(state: AgentState, config: RunnableConfig):
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
-        res = await client.get(f"{NESTJS_BASE_URL}/stats/orders", params={"period": period})
+        headers = get_auth_headers()
+        res = await client.get(f"{NESTJS_BASE_URL}/stats/orders", params={"period": period}, headers=headers)
         data = res.json()
 
     state["logs"][-1]["done"] = True
@@ -244,7 +257,8 @@ async def book_stats_node(state: AgentState, config: RunnableConfig):
     await copilotkit_emit_state(config, state)
 
     async with httpx.AsyncClient() as client:
-        res = await client.get(f"{NESTJS_BASE_URL}/stats/books")
+        headers = get_auth_headers()
+        res = await client.get(f"{NESTJS_BASE_URL}/stats/books", headers=headers)
         data = res.json()
 
     state["logs"][-1]["done"] = True
