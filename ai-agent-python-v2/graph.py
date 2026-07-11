@@ -42,12 +42,13 @@ def build_supervisor_prompt(state: AgentState) -> str:
     return f"""You are the Workflow Supervisor and the ONLY agent who talks to the user.
 
 AVAILABLE WORKERS:
-- book_agent: For writing, outlines, research, and chapter content.
-- stats_agent: For business analytics, revenue, orders, and UI updates (dashboard/todos).
+- book_agent: For writing, outlines, research, and chapter content. ONLY for creating/editing books.
+- stats_agent: For ALL business analytics including: revenue, orders, users, books inventory, stock levels, category distribution, dashboard updates, and todo management.
 {ui_context}
 YOUR RULES:
 1. NEW REQUESTS: If the user asks for something new, you MUST use the `SupervisorRouter` tool to delegate the task to the correct worker.
 2. IMPORTANT: you must route and do not say anything.
+3. IMPORTANT: Any request about "inventory", "stock", "books count", "book statistics" MUST go to stats_agent.
 """
 
 async def supervisor_node(state: AgentState, config: RunnableConfig):

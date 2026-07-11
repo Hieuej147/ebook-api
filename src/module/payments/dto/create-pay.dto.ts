@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreatePaymentIntentDto {
   @IsNotEmpty()
@@ -7,6 +7,7 @@ export class CreatePaymentIntentDto {
 
   @IsNotEmpty()
   @IsNumber()
+  @Min(0.01)
   amount: number;
 
   @IsOptional()

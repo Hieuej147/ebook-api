@@ -154,10 +154,12 @@ export class PaymentsService {
     });
 
     if (order?.cartId) {
-      await this.prisma.cart.update({
-        where: { id: order.cartId },
-        data: { checkedOut: true },
-      });
+      await this.prisma.$transaction([
+        this.prisma.cart.update({
+          where: { id: order.cartId },
+          data: { checkedOut: true },
+        }),
+      ]);
     }
 
     return {

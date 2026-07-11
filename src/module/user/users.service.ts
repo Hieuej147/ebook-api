@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto, ChangePasswordDto, UserResponseDto, UpdateUserbyAdminDto } from './dto';
 import * as argon from 'argon2';
@@ -63,11 +63,10 @@ export class UserService {
         where: { email: updateUserDto.email },
       });
       if (emailTaken) {
-        throw new NotFoundException('Email is already taken');
+        throw new ConflictException('Email is already taken');
       }
     }
 
-    // Update user profile
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: updateUserDto,
@@ -104,11 +103,10 @@ export class UserService {
         where: { email: updateUserDto.email },
       });
       if (emailTaken) {
-        throw new NotFoundException('Email is already taken');
+        throw new ConflictException('Email is already taken');
       }
     }
 
-    // Update user profile
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: updateUserDto,
@@ -145,12 +143,12 @@ export class UserService {
     const isPasswordValid = await argon.verify(user.password, currentPassword);
 
     if (!isPasswordValid) {
-      throw new NotFoundException('Current password is incorrect');
+      throw new UnauthorizedException('Current password is incorrect');
     }
 
     const isSamePassword = await argon.verify(user.password, newPassword);
     if (isSamePassword) {
-      throw new NotFoundException(
+      throw new BadRequestException(
         'New password must be different from the current password',
       );
     }

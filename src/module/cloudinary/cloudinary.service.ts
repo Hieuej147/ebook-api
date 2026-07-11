@@ -41,7 +41,6 @@ export class CloudinaryService {
     const response = await fetch(url); // Node.js 18+ đã có sẵn fetch
     if (!response.ok) throw new Error(`Cannot downloaded image: ${url}`);
     const arrayBuffer = await response.arrayBuffer();
-    console.log(' down image: ', arrayBuffer);
     return Buffer.from(arrayBuffer);
   }
 }

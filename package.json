@@ -29,7 +29,6 @@
     "dev:all": "concurrently -c \"cyan.bold,green.bold,yellow.bold\" -n \"NEST-API,TS-AGENT,PY-AGENT\" \"pnpm run start:dev\" \"pnpm run dev:ts-agent\" \"pnpm run dev:py-agent\""
   },
   "dependencies": {
-    "@copilotkit/runtime": "^1.56.2",
     "@keyv/redis": "^5.1.6",
     "@langchain/ollama": "^1.2.6",
     "@nestjs/cache-manager": "^3.1.0",
@@ -94,6 +93,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
     "zod": "^3.25.76"

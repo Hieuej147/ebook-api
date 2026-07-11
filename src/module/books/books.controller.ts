@@ -97,8 +97,8 @@ export class BooksController {
 
   // Get all books for admin
   @Get('admin/all')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get all books (Only admin)',

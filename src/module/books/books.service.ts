@@ -242,7 +242,7 @@ export class BooksService {
     return this.formatBook(updatedBook);
   }
 
-  // Update product stock
+  // Update product stock (atomic)
   async updateStock(id: string, quantity: number): Promise<BookResponseDto> {
     const book = await this.prisma.book.findUnique({
       where: { id },
@@ -258,8 +258,8 @@ export class BooksService {
     }
 
     const updatedBook = await this.prisma.book.update({
-      where: { id },
-      data: { stock: newStock },
+      where: { id, stock: { gte: quantity < 0 ? Math.abs(quantity) : 0 } },
+      data: { stock: { increment: quantity } },
       include: {
         category: true,
       },
@@ -268,7 +268,7 @@ export class BooksService {
     return this.formatBook(updatedBook);
   }
 
-  // Remove a product
+  // Remove a product (soft delete)
   async remove(id: string): Promise<{ message: string }> {
     const book = await this.prisma.book.findUnique({
       where: { id },
@@ -288,8 +288,9 @@ export class BooksService {
       );
     }
 
-    await this.prisma.book.delete({
+    await this.prisma.book.update({
       where: { id },
+      data: { deletedAt: new Date(), isActive: false },
     });
 
     return { message: 'Product deleted successfully' };

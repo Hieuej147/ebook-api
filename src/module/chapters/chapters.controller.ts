@@ -18,12 +18,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorator/roles.decorator';
 import { Role } from '@prisma/client';
 import { ChapterResponse } from './dto/chapter-res.dto';
 
 @Controller('chapters')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 @ApiTags('chapters')
 @ApiBearerAuth('JWT-auth')

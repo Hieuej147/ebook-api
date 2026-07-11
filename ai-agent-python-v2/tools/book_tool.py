@@ -335,7 +335,7 @@ class EditChapterContentInput(BaseModel):
 
 @tool("edit_chapter_content", args_schema=EditChapterContentInput)
 def edit_chapter_content(chapterNumber: int, search_text: str, replacement_text: str):
-    """
+    """ 
     Locally replaces a specific text segment within a chapter. 
     Note: This action triggers a SYSTEM PAUSE to request user approval. The document will only update upon user consent.
     """

@@ -55,7 +55,7 @@ RUN pnpm dlx prisma generate
 # 7. Copy kết quả build cuối cùng
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 3005
+EXPOSE 3000
 
 # 8. Chạy DB Migrate và khởi động Server bằng pnpm dlx
-CMD ["sh", "-c", "pnpm dlx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "pnpm dlx prisma migrate deploy && node dist/src/main.js"]

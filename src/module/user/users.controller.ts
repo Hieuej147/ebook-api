@@ -72,7 +72,6 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
-    console.log(id);
     return await this.usersService.findOne(id);
   }
 

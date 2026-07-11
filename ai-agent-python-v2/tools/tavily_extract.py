@@ -49,7 +49,7 @@ def get_extracted_resource(url: str):
 # Asynchronous wrapper to execute the synchronous Tavily client on a thread pool
 async def async_tavily_extract(urls: List[str], query: Optional[str], extract_depth: str) -> Dict[str, Any]:
     """Asynchronous wrapper for the Tavily extract API."""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         # Run tavily_client.extract (synchronous) within the executor pool to prevent blocking the async event loop
         return await loop.run_in_executor(

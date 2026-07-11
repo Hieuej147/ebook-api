@@ -1,6 +1,7 @@
 // src/cart/dto/merge-cart.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, IsNumber } from 'class-validator';
+import { IsArray, IsString, IsNumber, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CartItemDto {
   @ApiProperty()
@@ -15,5 +16,7 @@ export class CartItemDto {
 export class MergeCartDto {
   @ApiProperty({ type: [CartItemDto] })
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CartItemDto)
   items: CartItemDto[];
 }

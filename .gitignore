@@ -52,3 +52,9 @@ Thumbs.db
 
 dist/
 **/dist
+
+.agents
+
+# Local-only agents, not part of the public demo setup
+agent-server/
+agent-ts/

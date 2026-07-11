@@ -4,7 +4,8 @@ dist
 .env.*
 ai-agent-python/
 ai-agent-python-v2/
-agent-server/ 
+agent-server/
+agent-ts/
 *.log
 coverage
 .git

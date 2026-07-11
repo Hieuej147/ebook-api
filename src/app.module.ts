@@ -17,7 +17,6 @@ import { StatsModule } from './module/stats/stats.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { EbedingModule } from './module/embeding/embeding.module';
-import { CopilotkitModule } from './module/copilotkit/copilotkit.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -63,7 +62,6 @@ import { APP_GUARD } from '@nestjs/core';
     ExportDocModule,
     StatsModule,
     EbedingModule,
-    CopilotkitModule,
   ],
   controllers: [AppController],
   providers: [

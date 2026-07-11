@@ -3,13 +3,19 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers['x-internal-api-key']; // Key gửi từ Agent
-    
-    // So khớp với key trong file .env của NestJS
-    if (apiKey !== process.env.INTERNAL_API_KEY) {
-      throw new UnauthorizedException('Không có quyền truy cập nội bộ');
+    const configuredKey = process.env.INTERNAL_API_KEY;
+
+    if (!configuredKey) {
+      throw new UnauthorizedException('Internal API key not configured');
     }
+
+    const request = context.switchToHttp().getRequest();
+    const apiKey = request.headers['x-internal-api-key'];
+
+    if (!apiKey || apiKey !== configuredKey) {
+      throw new UnauthorizedException('Invalid internal API key');
+    }
+
     return true;
   }
 }

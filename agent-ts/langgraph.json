@@ -1,8 +1,0 @@
-{
-  "node_version": "20",
-  "dependencies": ["."],
-  "graphs": {
-    "ebook_agent": "./src/agent.ts:graph"
-  },
-  "env": ".env"
-}

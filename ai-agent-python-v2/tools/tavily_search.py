@@ -30,7 +30,7 @@ class TavilySearchInput(BaseModel):
         description="Independent research queries needed to collect all necessary information for writing the book."
     )
 
-@tool("tavily_search")
+@tool("tavily_search", args_schema=TavilySearchInput)
 def tavily_search(sub_queries: List[TavilyQuery]):  # pylint: disable=invalid-name,unused-argument
     """
     Search the web for multiple queries in parallel to gather information for book writing.
@@ -50,7 +50,7 @@ def ExtractSources(sources: List[SourceInput]):  # pylint: disable=invalid-name,
 # Asynchronous wrapper executing the synchronous client on a thread pool
 async def async_tavily_search(item: dict) -> List[Dict[str, Any]]:
     """Asynchronous wrapper for Tavily search API."""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     topic = item.get("topic", "general") if item.get("topic") in ['general','news'] else 'general'
     search_depth = item.get("search_depth", "basic") if item.get("search_depth") in ['advanced', 'basic', 'fast', 'ultra-fast'] else 'basic'
     domains = item.get("domains")
