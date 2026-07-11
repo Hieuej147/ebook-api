@@ -55,6 +55,34 @@ dist/
 
 .agents
 
+# temp directory
+.temp
+.tmp
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+/generated/prisma
+
+# Python
+ai-agent-python/.venv/
+ai-agent-python/__pycache__/
+ai-agent-python/.env
+ai-agent-python/*.pyc
+ai-agent-python/draw_graph.py
+ai-agent-python-v2/.venv/
+ai-agent-python-v2/__pycache__/
+ai-agent-python-v2/.env
+ai-agent-python-v2/*.pyc
+
+uv.lock
+
 # Local-only agents, not part of the public demo setup
 agent-server/
 agent-ts/
