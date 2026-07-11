@@ -87,7 +87,7 @@ I developed a rendering engine that parses raw **Markdown chapters** and transfo
 
 The final frontier was the AI Assistant. Using **LangGraph and CopilotKit**, I built an agent that doesn't just chat—it acts.
 
-- **Tools**: The agent can call internal APIs (protected by API keys) to fetch book statistics, search the catalog, or perform web research via the **Tavily API**.
+- **Tools**: The agent can call protected NestJS APIs with the forwarded admin JWT to fetch book statistics, search the catalog, or perform web research via the **Tavily API**.
 
 ---
 

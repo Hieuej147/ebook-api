@@ -50,7 +50,6 @@ API-EBook/
 │       ├── export-doc/           # Xuất sách ra DOCX/PDF
 │       ├── embeding/             # Vector embedding (Ollama nomic-embed-text, 768 chiều)
 │       ├── copilotkit/           # CopilotKit runtime endpoint cho AI agents
-│       ├── internal-api/         # API nội bộ (agent ↔ API, bảo vệ bằng API key)
 │       └── prisma/               # Prisma service kết nối DB
 ├── prisma/
 │   ├── schema.prisma             # Schema DB (10 models)
@@ -304,8 +303,8 @@ User → /signin → Server Action → POST /auth/signin (NestJS)
 │  │ + pgvec  │ │ Runtime      │  │    └────────────────────────┘
 │  └──────────┘ └──────────────┘  │
 │  ┌──────────┐ ┌──────────────┐  │
-│  │ Redis    │ │ Internal API │  │
-│  │ Cache    │ │ (API Key)    │  │
+│  │ Redis    │ │ JWT Guards   │  │
+│  │ Cache    │ │ Role checks  │  │
 │  └──────────┘ └──────────────┘  │
 └─────────────────────────────────┘
           │
@@ -358,13 +357,13 @@ CopilotSidebar (Chat UI) → POST /api/copilotkit
     → CopilotKit Runtime (Next.js)
     → LangGraphHttpAgent → DEPLOYMENT_URL/book-agent
     → Python Agent v2 (FastAPI + LangGraph)
-    → Tools gọi ngược lại NestJS Internal API
+    → Tools gọi ngược lại NestJS bằng Bearer access token
 ```
 
 **Agent gọi ngược lại NestJS:**
-- Python agent gọi `GET /internal/user-info/:id` (bảo vệ bằng `x-internal-api-key`)
-- Python agent gọi `POST /internal/process-data`
-- Stats tools gọi trực tiếp database qua Prisma hoặc internal endpoints
+- Python agent nhận Bearer token từ Next.js Copilot runtime
+- Python agent forward token đó khi gọi `/stats/...` và các API bảo vệ khác
+- NestJS vẫn kiểm tra JWT/role guard như request admin bình thường
 
 #### C. Dashboard Server Components → NestJS (DAL)
 
@@ -543,7 +542,6 @@ Sử dụng trong: `books/page.tsx`, `categories/page.tsx`, `orders/page.tsx`
 | `CLOUDINARY_*` | Image upload |
 | `TAVILY_API_KEY` | Web search |
 | `OLLAMA_BASE_URL` | Local LLM |
-| `INTERNAL_API_KEY` | Agent → NestJS internal API |
 | `ALLOWED_ORIGINS` | CORS configuration |
 
 ---
