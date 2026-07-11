@@ -1,6 +1,6 @@
 # API-EBook
 
-NestJS backend for the E-Book admin demo. It provides auth, role-based admin APIs, books, categories, orders, stats, uploads, payments, and internal APIs used by the Python AI agent.
+NestJS backend for the E-Book admin demo. It provides auth, role-based admin APIs, books, categories, orders, stats, uploads, payments.
 
 The public demo stack is:
 
@@ -19,7 +19,7 @@ API-EBook is the backend for a small e-book management demo. It is built as a pr
 - Admin signs in with JWT access/refresh tokens.
 - Admin manages books, categories, chapters, orders, users, and dashboard stats.
 - Covers and assets can be uploaded through Cloudinary.
-- A Python AI agent can call protected internal APIs for book and analytics workflows.
+- A Python AI agent can call protected NestJS APIs for book and analytics workflows by forwarding the admin JWT.
 - The Next.js dashboard talks to this API through secure server-side route handlers.
 
 ## Architecture
@@ -34,11 +34,10 @@ Browser
               -> Redis
               -> Cloudinary
               -> Stripe payment module
-              -> Internal API guarded by x-internal-api-key
 
 Next.js /api/copilotkit
   -> Python AI Agent
-      -> NestJS stats/books/internal APIs
+      -> NestJS stats/books APIs with forwarded Bearer access token
 ```
 
 Important notes:
@@ -56,7 +55,7 @@ Important notes:
 - **Stats**: overview, revenue, order, user, and book chart data.
 - **Exports**: book content export to supported document formats.
 - **Uploads**: Cloudinary integration for images.
-- **AI support**: internal APIs and Python agent integration for dashboard workflows.
+- **AI support**: Python agent integration for dashboard workflows using the admin JWT.
 
 ## Repositories
 
@@ -117,7 +116,6 @@ PORT=3000
 
 JWT_SECRET=change-me-access-secret
 JWT_REFRESH_SECRET=change-me-refresh-secret
-INTERNAL_API_KEY=change-me-internal-api-key
 
 OPENAI_API_KEY=your-openai-key
 TAVILY_API_KEY=your-tavily-key
@@ -138,7 +136,6 @@ SESSION_SECRET_KEY=change-me-min-32-characters-for-dashboard
 ### Env Notes
 
 - `SESSION_SECRET_KEY` is used by the dashboard container in full Docker mode.
-- `INTERNAL_API_KEY` must match what the Python agent sends to internal endpoints.
 - `STRIPE_SECRET_KEY` can be a Stripe test key or the dummy value above if you only need the backend to boot.
 - Cloudinary keys are required when testing image upload.
 - OpenAI and Tavily keys are required for AI-assisted flows.
@@ -222,7 +219,7 @@ GET  /stats/revenue/chart
 GET  /export/:id/:format
 ```
 
-Some routes require `Authorization: Bearer <accessToken>`. Internal AI routes also require `x-internal-api-key`.
+Some routes require `Authorization: Bearer <accessToken>`. The Python agent also uses the forwarded admin Bearer token when calling protected stats and book APIs.
 
 ## Admin Login
 
@@ -261,7 +258,7 @@ pnpm test
 - **API cannot connect to Redis locally**: check `REDIS_URL=redis://localhost:6379`.
 - **Docker containers cannot connect to each other**: use service names in Docker env, for example `db`, `redis`, `api`, and `ai-agent-python`.
 - **Payment module fails on boot**: set `STRIPE_SECRET_KEY` to a Stripe test key or the dummy test value in this README.
-- **AI stats/book tools fail**: check `INTERNAL_API_KEY`, `OPENAI_API_KEY`, `TAVILY_API_KEY`, and `NESTJS_BASE_URL` for the Python agent.
+- **AI stats/book tools fail**: check `OPENAI_API_KEY`, `TAVILY_API_KEY`, `PYTHON_AGENT_URL` in the dashboard, and `NESTJS_BASE_URL` for the Python agent. Also make sure you are logged in as an admin.
 
 ## Notes
 

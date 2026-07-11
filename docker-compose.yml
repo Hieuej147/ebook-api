@@ -50,7 +50,6 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
       OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY is required}
       TAVILY_API_KEY: ${TAVILY_API_KEY:?TAVILY_API_KEY is required}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_dummy_for_demo_boot_only}
