@@ -47,14 +47,31 @@ export class StatsService {
     ttl: number,
     fn: () => Promise<T>,
   ): Promise<T> {
-    const cached = await this.cache.get<T>(key);
+    // Cache is an optimisation only. A broken/unreachable Redis instance
+    // must never block the stats endpoint (and therefore an AG-UI run).
+    const cacheTimeout = new Promise<undefined>((resolve) =>
+      setTimeout(() => resolve(undefined), 750),
+    );
+    let cached: T | null | undefined;
+    try {
+      cached = await Promise.race([this.cache.get<T>(key), cacheTimeout]);
+    } catch {
+      cached = undefined;
+    }
     if (cached) {
       console.log(`✅ Cache HIT: ${key}`);
       return cached;
     }
     console.log(`❌ Cache MISS: ${key}`);
     const data = await fn();
-    await this.cache.set(key, data, ttl);
+    try {
+      await Promise.race([
+        this.cache.set(key, data, ttl),
+        new Promise<void>((resolve) => setTimeout(resolve, 750)),
+      ]);
+    } catch {
+      // Ignore cache write failures; the database result is authoritative.
+    }
     return data;
   }
 

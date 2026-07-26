@@ -12,7 +12,7 @@ import asyncio
 from state import AgentState
 from auth_context import current_auth_token
 
-NESTJS_BASE_URL = os.getenv("NESTJS_BASE_URL", "http://localhost:3005")
+NESTJS_BASE_URL = os.getenv("NESTJS_BASE_URL", "http://localhost:3006")
 
 def get_auth_headers() -> dict:
     """Get auth headers from context variable."""
@@ -256,10 +256,22 @@ async def book_stats_node(state: AgentState, config: RunnableConfig):
     state["logs"].append({"message": "📚 Fetching book inventory and statistics...", "done": False})
     await copilotkit_emit_state(config, state)
 
-    async with httpx.AsyncClient() as client:
-        headers = get_auth_headers()
-        res = await client.get(f"{NESTJS_BASE_URL}/stats/books", headers=headers)
-        data = res.json()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            headers = get_auth_headers()
+            res = await client.get(
+                f"{NESTJS_BASE_URL}/stats/books",
+                headers=headers,
+            )
+            res.raise_for_status()
+            data = res.json()
+    except Exception as error:
+        data = {
+            "by_status": {},
+            "low_stock_books": [],
+            "by_category": {},
+            "error": f"Unable to load book statistics: {error}",
+        }
 
     state["logs"][-1]["done"] = True
     await copilotkit_emit_state(config, state)
