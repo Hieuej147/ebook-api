@@ -81,8 +81,16 @@ ai-agent-python-v2/__pycache__/
 ai-agent-python-v2/.env
 ai-agent-python-v2/*.pyc
 
-uv.lock
-
 # Local-only agents, not part of the public demo setup
 agent-server/
 agent-ts/
+
+# Local SQLite/checkpointer state
+.data/
+
+# Local research and architecture notes
+PROJECT_ANALYSIS.md
+THE_PROCESS_TEMPLATE.md
+docs/
+packages/thread-manager/README.md
+packages/thread-manager/IMPLEMENTATION_GUIDE.md

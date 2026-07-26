@@ -19,6 +19,7 @@ import KeyvRedis from '@keyv/redis';
 import { EbedingModule } from './module/embeding/embeding.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { ThreadRuntimeModule } from './module/thread-runtime/thread-runtime.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { APP_GUARD } from '@nestjs/core';
     ExportDocModule,
     StatsModule,
     EbedingModule,
+    ThreadRuntimeModule,
   ],
   controllers: [AppController],
   providers: [

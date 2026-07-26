@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Command
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.base import BaseCheckpointSaver
 
 from copilotkit.langchain import copilotkit_customize_config
 
@@ -98,7 +98,7 @@ async def supervisor_node(state: AgentState, config: RunnableConfig):
     return Command(goto=next_agent)
 
 
-def create_agent_graph():
+def create_agent_graph(checkpointer: BaseCheckpointSaver | None = None):
     workflow = StateGraph(AgentState)
 
     # Khai báo các Node
@@ -114,14 +114,7 @@ def create_agent_graph():
     workflow.add_edge("book_agent", END)
     workflow.add_edge("stats_agent", END)
     
-    is_fast_api = os.environ.get("LANGGRAPH_FAST_API", "false").lower() == "true"
-    
-    if is_fast_api:
-       
-        memory = MemorySaver()
-        return workflow.compile(checkpointer=memory)
-    else:
-       
-        return workflow.compile()
+    return workflow.compile(checkpointer=checkpointer)
 
+# LangGraph CLI imports this symbol and supplies its own persistence runtime.
 graph = create_agent_graph()

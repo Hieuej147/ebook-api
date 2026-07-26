@@ -1,267 +1,284 @@
-# API-EBook
+# API-EBook backend
 
-NestJS backend for the E-Book admin demo. It provides auth, role-based admin APIs, books, categories, orders, stats, uploads, payments.
+The API-EBook backend is the shared application API for the BookStudio ebook
+platform. It is not an admin-only service: the same NestJS application supports
+public catalogue reads, authenticated customer accounts, shopping cart and
+checkout flows, admin content operations, statistics, exports, and AI-assisted
+workflows.
 
-The public demo stack is:
+It is built with NestJS, Prisma, PostgreSQL, Redis, and a separate Python
+LangGraph agent. The API is framework-independent from the frontend: a Next.js
+BFF currently consumes it, but a mobile app, storefront, or another backend can
+call the documented HTTP API with the same authentication contract.
 
-- PostgreSQL + pgvector
-- Redis
-- NestJS API
-- Python AI agent
-- Next.js admin dashboard
+## Related projects
 
-The dashboard Copilot runtime lives in the Next.js app at `/api/copilotkit`.
+Related repositories:
 
-## What This Project Does
+- [Next.js dashboard](https://github.com/Hieuej147/ebook-dashboard)
+- [ebook-api](https://github.com/Hieuej147/ebook-api)
 
-API-EBook is the backend for a small e-book management demo. It is built as a practical admin API rather than a production SaaS template. The main goal is to show a complete flow:
+Components in this repository:
 
-- Admin signs in with JWT access/refresh tokens.
-- Admin manages books, categories, chapters, orders, users, and dashboard stats.
-- Covers and assets can be uploaded through Cloudinary.
-- A Python AI agent can call protected NestJS APIs for book and analytics workflows by forwarding the admin JWT.
-- The Next.js dashboard talks to this API through secure server-side route handlers.
+- [Python LangGraph agent](./ai-agent-python-v2/)
+- [Framework-agnostic thread-manager](./packages/thread-manager/)
 
-## Architecture
+## Main features
 
-```text
-Browser
-  -> Next.js Dashboard
-      -> httpOnly session cookie
-      -> Next.js API routes / proxy layer
-          -> NestJS API
-              -> PostgreSQL + pgvector
-              -> Redis
-              -> Cloudinary
-              -> Stripe payment module
+- **Public catalogue**: browse active books and categories, search by catalogue
+  fields, view book details, and read published chapters.
+- **Customer accounts**: sign up, sign in, refresh sessions, manage profile data,
+  and enforce `USER`/`ADMIN` role boundaries.
+- **Shopping flow**: add and update cart items, create orders, track order
+  status, and associate payments with orders.
+- **Inventory integrity**: validate stock and update inventory inside Prisma
+  transactions so concurrent order operations do not silently oversell stock.
+- **Admin content management**: create and update books, categories, chapters,
+  publication status, images, and inventory.
+- **Admin operations**: inspect users, orders, statistics, exports, and usage
+  metrics through protected endpoints.
+- **Search and embeddings**: store pgvector embeddings for semantic-search and
+  AI-assisted catalogue workflows.
+- **File and payment integrations**: use Cloudinary for media and the configured
+  payment provider for payment lifecycle updates.
+- **AI-assisted workflows**: connect LangGraph agents to books, statistics,
+  writing, and action tools through protected NestJS APIs.
+- **Persistent conversation threads**: expose AG-UI-compatible runs, reconnect,
+  stop, list, rename, and delete operations with durable messages and checkpoints.
+- **Framework-neutral API contract**: keep domain rules in NestJS so the same API
+  can serve the dashboard, a storefront, a mobile app, or another trusted client.
 
-Next.js /api/copilotkit
-  -> Python AI Agent
-      -> NestJS stats/books APIs with forwarded Bearer access token
-```
-
-Important notes:
-
-- CopilotKit runtime is handled by the dashboard at `/api/copilotkit`.
-
-## Main Features
-
-- **Authentication**: signup, signin, access token, refresh token rotation, logout.
-- **Authorization**: admin-only dashboard APIs using role checks.
-- **Books**: CRUD, categories, stock, status, image URL, chapter relation.
-- **Chapters**: markdown-style content management for each book.
-- **Categories**: category CRUD, active state, slug lookup.
-- **Orders**: admin order list, status updates, order items, user order history.
-- **Stats**: overview, revenue, order, user, and book chart data.
-- **Exports**: book content export to supported document formats.
-- **Uploads**: Cloudinary integration for images.
-- **AI support**: Python agent integration for dashboard workflows using the admin JWT.
-
-## Repositories
-
-This demo is split into two public repositories. Clone both to run the full app:
-
-- Backend API: <https://github.com/Hieuej147/ebook-api>
-- Admin dashboard: <https://github.com/Hieuej147/ebook-dashboard>
-
-Recommended folder layout:
+## What the backend owns
 
 ```text
-your-workspace/
-  API-EBook/
-  Dashboard/
-    my-app/
+Clients
+  ├─ public storefront / mobile client
+  ├─ authenticated customer client
+  ├─ Next.js admin dashboard BFF
+  └─ Python AI agent
+          │
+          ▼
+      NestJS API (this repository)
+          ├─ PostgreSQL + pgvector
+          ├─ Redis
+          ├─ Cloudinary
+          ├─ payment provider
+          └─ thread runtime / AG-UI
 ```
 
-Example:
+The API owns business rules and persistence. Frontends should not connect to
+Prisma, PostgreSQL, Redis, or the Python agent directly.
 
-```bash
-mkdir ebook-demo
-cd ebook-demo
+## Domain modules
 
-git clone https://github.com/Hieuej147/ebook-api.git API-EBook
-mkdir Dashboard
-git clone https://github.com/Hieuej147/ebook-dashboard.git Dashboard/my-app
+| Module | Responsibility |
+| --- | --- |
+| `auth` | Sign up, sign in, refresh-token rotation, sign out, current session |
+| `user` | Customer profile and admin user management |
+| `books` | Catalogue, search, inventory, book CRUD, soft-delete/status |
+| `category` | Category CRUD and catalogue grouping |
+| `chapters` | Chapter authoring and book/chapter relationships |
+| `cart` | Customer cart and cart-item quantities |
+| `orders` | Order creation, order history, status and inventory transactions |
+| `payments` | Payment intents/status and order payment association |
+| `stats` | Aggregated business metrics for authorized admin workflows |
+| `export-doc` | Export book/chapter content |
+| `embeding` | Vector embeddings and semantic-search support |
+| `cloudinary` | Image/file upload integration |
+| `thread-runtime` | Persistent AG-UI runs, thread CRUD, message projection and titles |
+
+The Prisma schema models users, books, categories, chapters, carts, orders,
+payments, usage, and conversation threads. Foreign keys and Prisma transactions
+protect relationships and stock updates. PostgreSQL's vector extension is used
+for embedding storage.
+
+## Authentication and authorization
+
+Authentication uses a short-lived access token and a rotating refresh token.
+Passwords are hashed with Argon2. Protected controllers use JWT guards and role
+guards; `USER` and `ADMIN` are represented by the Prisma `Role` enum.
+
+Typical access boundaries:
+
+- Public catalogue endpoints may be used without a session.
+- Customer endpoints require a valid user session and enforce ownership of carts,
+  orders, and profile data.
+- Admin endpoints require the `ADMIN` role.
+- AI tools call only protected endpoints and must forward an authorized identity.
+
+The Next.js dashboard stores session state in an encrypted `httpOnly` cookie and
+forwards the access token server-side. A different client may use the API directly,
+but should keep tokens in a secure platform-managed storage and never expose
+refresh tokens to ordinary browser JavaScript.
+
+## AI and AG-UI architecture
+
+The Python service in `ai-agent-python-v2` runs LangGraph agents and exposes the
+AG-UI-compatible agent endpoint. The dashboard's `/api/copilotkit` BFF forwards
+AG-UI requests to the NestJS thread runtime, while NestJS forwards authorized
+book/stats/action calls to the Python agent where appropriate.
+
+```text
+CopilotKit React
+  -> Next.js /api/copilotkit BFF
+      -> NestJS thread-runtime
+          -> Persistent AgentRunner
+              -> Python LangGraph agent
+                  -> NestJS protected domain APIs
 ```
+
+No custom AG-UI transport is implemented in the frontend. Streaming is preserved
+by forwarding the upstream response body/SSE stream.
+
+## Conversation threads
+
+The framework-agnostic package in `packages/thread-manager` provides stores,
+checkpointers, runner persistence, and plain route handlers. The Nest adapter in
+`src/module/thread-runtime` adds request identity, Prisma-backed thread metadata,
+event persistence, message projection, and title generation.
+
+The critical invariant is one namespace and one identifier:
+
+```text
+CopilotKit threadId
+  === LangGraph configurable.thread_id
+  === ConversationThread.id
+  === projected message threadId
+```
+
+Runs create or touch metadata before execution. Connect-before-run creates a safe
+stub thread instead of returning a 404. Stream events can be persisted while a
+run is active and projected into completed user/assistant messages after the
+terminal event. The first user message can be used to generate a thread title.
+
+For local package development use:
+
+```env
+STORE_DRIVER=memory
+# stable local option:
+STORE_DRIVER=sqlite
+SQLITE_PATH=.data/threads.sqlite
+# production option:
+STORE_DRIVER=postgres
+DATABASE_URL=postgresql://...
+```
+
+Memory is process-local and is intended for tests only. SQLite is convenient for
+one local process and restart recovery. Postgres is the correct store and
+checkpointer when multiple API instances share a load balancer.
 
 ## Requirements
 
 - Node.js 20+
 - pnpm
-- Docker + Docker Compose
-- API keys listed below
-- Python 3.12+ and `uv` if running the Python agent outside Docker
+- Docker (recommended for PostgreSQL and Redis)
+- Python 3.11+ and `uv` for AI features
 
-Keep `API-EBook` and `Dashboard/my-app` in the layout above if you want to use the full Docker compose from this repo. The compose file builds the dashboard from `../Dashboard/my-app`.
+## Local setup
+
+```bash
+pnpm install
+cp .env.example .env
+docker compose up db redis -d
+pnpm prisma:generate
+pnpm prisma:migrate
+pnpm prisma:seed
+pnpm start:dev
+```
+
+The API listens on `http://localhost:3000`.
+
+Start the optional Python agent in another terminal:
+
+```bash
+cd ai-agent-python-v2
+uv run uvicorn main:app --reload --host 0.0.0.0 --port 8001
+```
+
+The admin dashboard is maintained in the separate
+[ebook-dashboard repository](https://github.com/Hieuej147/ebook-dashboard) and
+normally runs on port `3001`. It is one consumer of this API, not the only one; a
+storefront or mobile client can call the NestJS routes directly.
+Public or mobile clients can call the Nest API directly instead of using that
+dashboard.
+
+Seed admin credentials:
 
 ```text
-your-workspace/
-  API-EBook/
-  Dashboard/
-    my-app/
+admin@ebook.com / Admin@123
 ```
 
 ## Environment
 
-Create `.env` in `API-EBook`.
+Use environment variables for all deployment-specific values. Do not hardcode
+database hosts, API keys, JWT secrets, or agent URLs.
 
 ```env
-DB_USER=postgres
-DB_PASS=123
-DB_NAME=nest
-
-DATABASE_URL=postgresql://postgres:123@localhost:5433/nest?schema=public
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ebook
 REDIS_URL=redis://localhost:6379
-PORT=3000
-
-JWT_SECRET=change-me-access-secret
-JWT_REFRESH_SECRET=change-me-refresh-secret
-
-OPENAI_API_KEY=your-openai-key
-TAVILY_API_KEY=your-tavily-key
-
-CLOUDINARY_NAME=your-cloudinary-name
-CLOUDINARY_API_KEY=your-cloudinary-api-key
-CLOUDINARY_API_SECRET=your-cloudinary-api-secret
-
-ALLOWED_ORIGINS=http://localhost:3001
-
-# Needed so the current payment module can boot.
-# Use a Stripe test key if you want to test checkout.
-STRIPE_SECRET_KEY=sk_test_dummy_for_demo_boot_only
-
-SESSION_SECRET_KEY=change-me-min-32-characters-for-dashboard
+JWT_SECRET=replace-me
+JWT_REFRESH_SECRET=replace-me
+AI_AGENT_URL=http://localhost:8001
 ```
 
-### Env Notes
+The complete variable list is in `.env.example`. Production values should come
+from a secret manager. Configure CORS and cookie origins for the actual frontend
+origins instead of using broad wildcards.
 
-- `SESSION_SECRET_KEY` is used by the dashboard container in full Docker mode.
-- `STRIPE_SECRET_KEY` can be a Stripe test key or the dummy value above if you only need the backend to boot.
-- Cloudinary keys are required when testing image upload.
-- OpenAI and Tavily keys are required for AI-assisted flows.
+## Database and migrations
 
-## Run With Docker
-
-From `API-EBook`, after cloning both repos:
+Prisma is the source of truth for relational schema changes:
 
 ```bash
-docker compose up --build
+pnpm prisma:generate
+pnpm prisma:migrate
+pnpm prisma:studio
 ```
 
-Services:
+Never edit generated Prisma client files. Add a migration for schema changes,
+review foreign-key and index behavior, then regenerate the client. For production
+deployments, run migrations as a release step before starting new application
+instances.
 
-- API: `http://localhost:3000`
-- Dashboard: `http://localhost:3001`
-- Python agent: `http://localhost:8001`
-- PostgreSQL: `localhost:5433`
-- Redis: `localhost:6379`
-
-The API container runs Prisma migrations on startup.
-
-Seed data is not automatically inserted by Docker. If you need demo books/admin data after containers are running:
+## Tests and quality
 
 ```bash
-pnpm prisma db seed
-```
-
-## Run Locally
-
-Start database services:
-
-```bash
-docker compose up db redis -d
-```
-
-Install and prepare the backend:
-
-```bash
-pnpm install
-pnpm prisma migrate deploy
-pnpm prisma db seed
-pnpm start:dev
-```
-
-Run Prisma Studio when you need to inspect or edit data:
-
-```bash
-pnpm prisma studio
-```
-
-Run the Python AI agent:
-
-```bash
-cd ai-agent-python-v2
-uv sync
-uv run uvicorn main:app --reload --host 0.0.0.0 --port 8001
-```
-
-Then run the dashboard from `Dashboard/my-app`.
-
-## Common API Areas
-
-```text
-POST /auth/signup
-POST /auth/signin
-POST /auth/refresh
-POST /auth/logout
-
-GET  /books
-GET  /books/:id
-POST /books/admin
-
-GET  /category
-GET  /category/list
-
-GET  /orders/admin/all
-GET  /stats/overview
-GET  /stats/revenue/chart
-
-GET  /export/:id/:format
-```
-
-Some routes require `Authorization: Bearer <accessToken>`. The Python agent also uses the forwarded admin Bearer token when calling protected stats and book APIs.
-
-## Admin Login
-
-Seeded admin account:
-
-```text
-email: admin@ebook.com
-password: Admin@123
-```
-
-Signup creates a normal `USER`. The dashboard is admin-only, so a newly registered account will be blocked until its role is changed.
-
-To promote a user:
-
-1. Run `pnpm prisma studio`.
-2. Open the `users` table.
-3. Change `role` from `USER` to `ADMIN`.
-4. Save and log in again.
-
-## Useful Scripts
-
-```bash
-pnpm start:dev          # run NestJS in watch mode
-pnpm build              # build backend
-pnpm prisma validate    # validate Prisma schema
-pnpm prisma migrate deploy
-pnpm prisma db seed
-pnpm prisma studio
 pnpm test
+pnpm build
+pnpm lint
+pnpm --filter @bookstore/thread-manager test
 ```
 
-## Troubleshooting
+The thread package tests CRUD, title generation, connect-before-run, event
+projection, and SQLite restart recovery. Domain modules contain unit tests for
+auth, books, categories, chapters, orders, users, and statistics.
 
-- **Dashboard login is blocked**: the user role is probably `USER`; promote it to `ADMIN` in Prisma Studio.
-- **API cannot connect to database locally**: check that `DATABASE_URL` uses `localhost:5433`, not Docker service name `db`.
-- **API cannot connect to Redis locally**: check `REDIS_URL=redis://localhost:6379`.
-- **Docker containers cannot connect to each other**: use service names in Docker env, for example `db`, `redis`, `api`, and `ai-agent-python`.
-- **Payment module fails on boot**: set `STRIPE_SECRET_KEY` to a Stripe test key or the dummy test value in this README.
-- **AI stats/book tools fail**: check `OPENAI_API_KEY`, `TAVILY_API_KEY`, `PYTHON_AGENT_URL` in the dashboard, and `NESTJS_BASE_URL` for the Python agent. Also make sure you are logged in as an admin.
+## Production direction
 
-## Notes
+The application is deployment-agnostic. To run multiple API pods behind a load
+balancer:
 
-- `STRIPE_SECRET_KEY` is included so the backend payment module can initialize. The admin dashboard demo does not require checkout.
-- Cloudinary keys are required for image upload flows.
-- OpenAI and Tavily keys are required for the AI demo.
+1. Move `ThreadStore` and the LangGraph checkpointer to Postgres.
+2. Use shared Redis for rate limits, queues, or distributed coordination.
+3. Keep uploads in Cloudinary/object storage rather than local disk.
+4. Run the Python agent as a separately scalable service.
+5. Apply database migrations before rolling out new API instances.
+6. Keep JWT/session secrets identical across all instances.
+
+No Kubernetes manifests, Helm charts, or Postgres Compose setup are part of this
+repository's thread implementation yet. Those are deployment concerns and can be
+added later without changing the domain module contracts.
+
+## Repository layout
+
+```text
+src/
+  module/                 NestJS domain modules and controllers
+  common/                 shared guards, decorators, filters and utilities
+  main.ts                 HTTP bootstrap
+prisma/
+  schema.prisma          relational schema
+  migrations/             versioned database changes
+ai-agent-python-v2/       optional LangGraph/AG-UI service
+packages/thread-manager/  framework-agnostic persistence package
+```

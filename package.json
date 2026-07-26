@@ -6,7 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
+    "prisma:generate": "prisma generate",
     "db:test:up": "docker compose up test-db -d",
     "db:test:studio": "dotenv -e .env -- prisma studio",
     "db:test:rm": "docker compose rm test-db -s -f -v",
@@ -26,9 +27,13 @@
     "test:e2e:test": "dotenv -e .env -- jest --watch --no-cache --config ./test/jest-e2e.json",
     "dev:ts-agent": "cd agent-ts && pnpm run dev",
     "dev:py-agent": "cd ai-agent-python && uv run python main.py --reload",
+    "dev:thread-runtime": "pnpm --filter @bookstore/thread-manager dev:express",
     "dev:all": "concurrently -c \"cyan.bold,green.bold,yellow.bold\" -n \"NEST-API,TS-AGENT,PY-AGENT\" \"pnpm run start:dev\" \"pnpm run dev:ts-agent\" \"pnpm run dev:py-agent\""
   },
   "dependencies": {
+    "@ag-ui/client": "0.0.57",
+    "@bookstore/thread-manager": "workspace:*",
+    "@copilotkit/runtime": "1.63.1",
     "@keyv/redis": "^5.1.6",
     "@langchain/ollama": "^1.2.6",
     "@nestjs/cache-manager": "^3.1.0",
@@ -114,5 +119,11 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "better-sqlite3"
+    ]
   }
 }

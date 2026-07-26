@@ -1,20 +1,45 @@
 # main.py
 import os
+from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint
 from copilotkit import LangGraphAGUIAgent
+from langchain_core.runnables import RunnableConfig
 from auth_context import current_auth_token
+from checkpointer import create_checkpointer
 
-# Import graph đã được compile từ hệ thống thư mục mới của bạn
-# Giả sử bạn đặt graph tại src/lib/graph.py
-from graph import graph
+from graph import create_agent_graph
 
-# 1. Khởi tạo FastAPI app
+DEFAULT_RECURSION_LIMIT = 12
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with create_checkpointer() as (checkpointer, persistence_info):
+        app.state.checkpointer = checkpointer
+        app.state.persistence_info = persistence_info
+
+        graph = create_agent_graph(checkpointer)
+        add_langgraph_fastapi_endpoint(
+            app=app,
+            agent=LangGraphAGUIAgent(
+                name="dashboard",
+                description="Agent biên tập sách thông minh, hỗ trợ lập dàn ý và soạn thảo.",
+                graph=graph,
+                config=RunnableConfig(recursion_limit=DEFAULT_RECURSION_LIMIT),
+            ),
+            path="/book-agent",
+        )
+
+        yield
+
+
 app = FastAPI(
     title="eBook AI Agent - AG-UI Server",
-    description="Hệ thống điều phối AI Agent hỗ trợ viết sách chuyên nghiệp."
+    description="Hệ thống điều phối AI Agent hỗ trợ viết sách chuyên nghiệp.",
+    lifespan=lifespan,
 )
 
 # 2. Cấu hình CORS (Cực kỳ quan trọng để NestJS và Browser không bị chặn)
@@ -39,31 +64,13 @@ async def auth_middleware(request: Request, call_next):
     finally:
         current_auth_token.reset(token)
     return response
-# 3. Đăng ký Endpoint LangGraph qua giao thức AG-UI
-# Endpoint này sẽ tự động xử lý:
-# - Streaming văn bản (Token-by-token)
-# - Streaming Tool Call arguments
-# - Đồng bộ State (State Sync)
-# - Quản lý Thread (Conversation history)
-add_langgraph_fastapi_endpoint(
-    app=app,
-    agent=LangGraphAGUIAgent(
-        name="dashboard", # ID này phải khớp với id ở phía NestJS/Frontend
-        description="Agent biên tập sách thông minh, hỗ trợ lập dàn ý và soạn thảo.",
-        graph=graph, # Đối tượng CompiledGraph từ src/lib/graph.py
-    ),
-    path="/book-agent", # URL: http://localhost:8000/langgraph-agent
-)
-
-
-# 4. Route kiểm tra trạng thái (Health Check)
-# Thêm vào main.py
 @app.get("/book-agent/info")
 def agent_info():
     return {
+        "checkpointer": app.state.persistence_info,
         "agents": [
             {
-                "name": "default",
+                "name": "dashboard",
                 "description": "Agent biên tập sách thông minh.",
             }
         ]
