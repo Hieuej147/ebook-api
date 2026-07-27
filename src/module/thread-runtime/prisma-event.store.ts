@@ -1,4 +1,5 @@
 import {
+  AgentRunKind,
   AgentRunStatus,
   Prisma,
 } from '@prisma/client';
@@ -6,6 +7,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { BaseEvent, RunAgentInput } from '@ag-ui/client';
 import type {
   EventStore,
+  RunStartMetadata,
   StoredRunEvent,
 } from '@bookstore/thread-manager';
 import { ThreadLockedError } from '@bookstore/thread-manager';
@@ -24,14 +26,28 @@ export class PrismaEventStore implements EventStore {
     runId: string,
     input: RunAgentInput,
     agentId: string,
+    metadata: RunStartMetadata = {},
   ): Promise<void> {
     await this.requireOwned(threadId);
+    const parent = metadata.parentRunId
+      ? await this.prisma.agentRun.findFirst({
+          where: { id: metadata.parentRunId, threadId },
+          select: { rootRunId: true, depth: true },
+        })
+      : null;
+    if (metadata.parentRunId && !parent) {
+      throw new NotFoundException('Parent run not found');
+    }
     try {
       await this.prisma.agentRun.create({
         data: {
           id: runId,
           threadId,
           agentId,
+          parentRunId: metadata.parentRunId,
+          rootRunId: metadata.rootRunId ?? parent?.rootRunId ?? runId,
+          depth: metadata.depth ?? (parent ? parent.depth + 1 : 0),
+          kind: metadata.kind === 'subagent' ? AgentRunKind.SUBAGENT : AgentRunKind.ROOT,
           input: input as unknown as Prisma.InputJsonValue,
         },
       });
@@ -85,6 +101,27 @@ export class PrismaEventStore implements EventStore {
         }),
       ),
     );
+  }
+
+  async replaceRunEvents(
+    threadId: string,
+    runId: string,
+    items: StoredRunEvent[],
+  ): Promise<void> {
+    await this.requireOwned(threadId);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.agentEvent.deleteMany({ where: { threadId, runId } });
+      if (items.length > 0) {
+        await tx.agentEvent.createMany({
+          data: items.map((item) => ({
+            runId: item.runId,
+            threadId: item.threadId,
+            sequence: item.sequence,
+            event: item.event as unknown as Prisma.InputJsonValue,
+          })),
+        });
+      }
+    });
   }
 
   async finishRun(

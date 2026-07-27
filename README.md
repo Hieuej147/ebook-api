@@ -44,7 +44,9 @@ Components in this repository:
 - **AI-assisted workflows**: connect LangGraph agents to books, statistics,
   writing, and action tools through protected NestJS APIs.
 - **Persistent conversation threads**: expose AG-UI-compatible runs, reconnect,
-  stop, list, rename, and delete operations with durable messages and checkpoints.
+  stop, list, rename, and delete operations with durable serialized events and
+  LangGraph checkpoints. The runtime uses exactly three thread tables:
+  `conversation_threads`, `agent_runs`, and `agent_events`.
 - **Framework-neutral API contract**: keep domain rules in NestJS so the same API
   can serve the dashboard, a storefront, a mobile app, or another trusted client.
 
@@ -85,7 +87,7 @@ Prisma, PostgreSQL, Redis, or the Python agent directly.
 | `export-doc` | Export book/chapter content |
 | `embeding` | Vector embeddings and semantic-search support |
 | `cloudinary` | Image/file upload integration |
-| `thread-runtime` | Persistent AG-UI runs, thread CRUD, message projection and titles |
+| `thread-runtime` | Persistent AG-UI runs, serialized event replay, thread CRUD, lineage and titles |
 
 The Prisma schema models users, books, categories, chapters, carts, orders,
 payments, usage, and conversation threads. Foreign keys and Prisma transactions
@@ -135,7 +137,8 @@ by forwarding the upstream response body/SSE stream.
 The framework-agnostic package in `packages/thread-manager` provides stores,
 checkpointers, runner persistence, and plain route handlers. The Nest adapter in
 `src/module/thread-runtime` adds request identity, Prisma-backed thread metadata,
-event persistence, message projection, and title generation.
+serialized event persistence, Redis run coordination, lineage fields, and title
+generation.
 
 The critical invariant is one namespace and one identifier:
 
@@ -143,13 +146,19 @@ The critical invariant is one namespace and one identifier:
 CopilotKit threadId
   === LangGraph configurable.thread_id
   === ConversationThread.id
-  === projected message threadId
+  === AgentEvent.threadId
 ```
 
 Runs create or touch metadata before execution. Connect-before-run creates a safe
-stub thread instead of returning a 404. Stream events can be persisted while a
-run is active and projected into completed user/assistant messages after the
-terminal event. The first user message can be used to generate a thread title.
+stub thread instead of returning a 404. Stream events are compacted into
+portable AG-UI snapshots after the terminal event. The first user message can
+be used to generate a thread title. A run also carries `parentRunId`,
+`rootRunId`, `depth`, and `kind` so future subagents can be added without
+changing the storage contract.
+
+Detailed local architecture and implementation notes are kept in
+[`docs/THREADS_ARCHITECTURE.md`](docs/THREADS_ARCHITECTURE.md); the current
+delivery summary is in [`docs/THREAD_RUNTIME_SUMMARY.md`](docs/THREAD_RUNTIME_SUMMARY.md).
 
 For local package development use:
 
@@ -186,7 +195,16 @@ pnpm prisma:seed
 pnpm start:dev
 ```
 
-The API listens on `http://localhost:3000`.
+The thread-runtime migration is a deliberate clean rebuild: it drops only the
+old conversation tables (including the removed `conversation_messages` table)
+and recreates `conversation_threads`, `agent_runs`, and `agent_events`. If an
+existing local database still has the previous thread migration history, run
+`pnpm prisma migrate reset` once against a disposable/local database. This is
+destructive, so back up any non-thread data first; production should use a
+reviewed environment-specific migration procedure.
+
+The Docker profile listens on `http://localhost:3000`. The host `start:dev`
+profile defaults to `http://localhost:3006` unless `PORT` is set explicitly.
 
 Start the optional Python agent in another terminal:
 
@@ -250,7 +268,8 @@ pnpm --filter @bookstore/thread-manager test
 ```
 
 The thread package tests CRUD, title generation, connect-before-run, event
-projection, and SQLite restart recovery. Domain modules contain unit tests for
+serialization/compaction, missing-terminal recovery, and SQLite restart recovery.
+Domain modules contain unit tests for
 auth, books, categories, chapters, orders, users, and statistics.
 
 ## Production direction

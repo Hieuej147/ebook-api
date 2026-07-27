@@ -16,7 +16,7 @@ import type { Request } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { RequestWithUser } from '../../common/interfaces/req-user.interface';
 import { PrismaThreadStore } from './prisma-thread.store';
-import { PrismaMessageProjector } from './prisma-message.projector';
+import { PrismaEventStore } from './prisma-event.store';
 import { ThreadRequestContextService } from './thread-request-context.service';
 
 interface RenameThreadBody {
@@ -28,7 +28,7 @@ interface RenameThreadBody {
 export class ThreadsController {
   constructor(
     private readonly store: PrismaThreadStore,
-    private readonly projector: PrismaMessageProjector,
+    private readonly events: PrismaEventStore,
     private readonly context: ThreadRequestContextService,
   ) {}
 
@@ -75,9 +75,9 @@ export class ThreadsController {
     });
   }
 
-  @Get(':threadId/messages')
-  messages(@Req() request: Request, @Param('threadId') threadId: string) {
-    return this.scoped(request, () => this.projector.listMessages(threadId));
+  @Get(':threadId/events')
+  eventsHistory(@Req() request: Request, @Param('threadId') threadId: string) {
+    return this.scoped(request, () => this.events.history(threadId));
   }
 
   @Patch(':threadId')

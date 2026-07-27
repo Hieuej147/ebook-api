@@ -12,7 +12,7 @@ describe("thread title generation", () => {
 
   it("generates a title from the first user message without changing the stream", async () => {
     vi.spyOn(InMemoryAgentRunner.prototype, "run").mockReturnValue(
-      of({ type: "RUN_STARTED" } as never),
+      of({ type: "RUN_STARTED" } as never, { type: "RUN_FINISHED" } as never),
     );
     const store = new InMemoryThreadStore();
     const generator = {
@@ -37,7 +37,7 @@ describe("thread title generation", () => {
       runner.run({ threadId: "title-thread", agent: { agentId: "dashboard" }, input } as never).pipe(toArray()),
     );
 
-    expect(events).toEqual([{ type: "RUN_STARTED" }]);
+    expect(events).toEqual([{ type: "RUN_STARTED" }, { type: "RUN_FINISHED" }]);
     expect(generator.generate).toHaveBeenCalledWith({
       agentId: "dashboard",
       threadId: "title-thread",
@@ -50,7 +50,7 @@ describe("thread title generation", () => {
 
   it("uses the first message as a fail-soft fallback", async () => {
     vi.spyOn(InMemoryAgentRunner.prototype, "run").mockReturnValue(
-      of({ type: "RUN_STARTED" } as never),
+      of({ type: "RUN_STARTED" } as never, { type: "RUN_FINISHED" } as never),
     );
     const store = new InMemoryThreadStore();
     const runner = new PersistentAgentRunner({

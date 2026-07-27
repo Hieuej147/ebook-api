@@ -6,7 +6,6 @@ import {
 } from '@copilotkit/runtime/v2';
 import { PersistentAgentRunner } from './runner/persistent-agent-runner.js';
 import { createEventStore } from './runner/event-store.js';
-import { createMessageProjector } from './runner/message-projector.js';
 import { createThreadsRouter } from './http/threads-router.js';
 import { createThreadStore } from './stores/index.js';
 import { mountExpress, type ExpressLikeApp } from './http/adapters/express.js';
@@ -58,13 +57,9 @@ export async function mountThreadModule(
     'sqlite';
   const store = await createThreadStore(driver);
   const events = await createEventStore(driver);
-  const projector = driver === 'postgres'
-    ? undefined
-    : await createMessageProjector(driver);
   const runner = new PersistentAgentRunner({
     store,
     events,
-    projector,
     defaultAgentId: 'default',
   });
   const runtime = new CopilotRuntime({ agents: options.agents, runner });
@@ -76,7 +71,6 @@ export async function mountThreadModule(
   const threads = createThreadsRouter({
     store,
     events,
-    projector,
     deleteThread: (threadId) => runner.deleteThread(threadId),
   });
   const handler: CopilotRuntimeFetchHandler = async (request) => {
@@ -104,7 +98,6 @@ export async function mountThreadModule(
     store,
     async close() {
       await events.close?.();
-      await projector?.close?.();
       await store.close?.();
     },
   };

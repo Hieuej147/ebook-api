@@ -1,8 +1,11 @@
 import type { BaseEvent, RunAgentInput } from "@ag-ui/client";
 import type { AgentRunner } from "@copilotkit/runtime/v2";
+import type { Observable } from "rxjs";
 
 export type ThreadStatus = "idle" | "running" | "deleting";
 export type StoreDriver = "memory" | "sqlite" | "postgres";
+export type AgentRunKind = "root" | "subagent";
+export type RunStatus = "running" | "completed" | "error" | "stopped";
 
 export interface ThreadMeta {
   id: string;
@@ -49,24 +52,54 @@ export interface StoredRunEvent {
   event: BaseEvent;
 }
 
-export type MessageStatus = "streaming" | "completed" | "error";
-
-export interface ConversationMessage {
-  id: string;
+export interface AgentRunLineage {
   threadId: string;
   runId: string;
-  role: string;
-  content: string;
-  status: MessageStatus;
-  createdAt: string;
-  updatedAt: string;
+  agentId: string;
+  parentRunId?: string;
+  rootRunId: string;
+  depth: number;
+  kind: AgentRunKind;
 }
 
-export interface MessageProjector {
-  apply(threadId: string, runId: string, event: BaseEvent): Promise<void>;
-  listMessages(threadId: string): Promise<ConversationMessage[]>;
-  removeThread(threadId: string): Promise<void>;
+export interface AgentDescriptor {
+  id: string;
+  kind: AgentRunKind;
+  capabilities?: readonly string[];
+}
+
+export interface SubagentRequest {
+  parent: AgentRunLineage;
+  agentId: string;
+  input: RunAgentInput;
+}
+
+export interface SerializedEventStream {
+  version: 1;
+  threadId: string;
+  runId: string;
+  parentRunId?: string;
+  events: BaseEvent[];
+}
+
+export interface EventSerializer {
+  serialize(stream: SerializedEventStream): string;
+  deserialize(value: string): SerializedEventStream;
+  compact(events: readonly BaseEvent[]): BaseEvent[];
+}
+
+export interface RunCoordinator {
+  acquire(threadId: string, runId: string, ttlMs: number): Promise<boolean>;
+  renew(threadId: string, runId: string, ttlMs: number): Promise<boolean>;
+  release(threadId: string, runId: string): Promise<void>;
+  publish(threadId: string, event: StoredRunEvent): Promise<void>;
+  subscribe(threadId: string, onEvent: (event: StoredRunEvent) => void): Promise<() => Promise<void>>;
   close?(): Promise<void> | void;
+}
+
+export abstract class AgentOrchestrator {
+  abstract resolve(agentId: string): Promise<AgentDescriptor>;
+  abstract runSubagent(request: SubagentRequest): Observable<BaseEvent>;
 }
 
 export interface ThreadTitleGenerator {
@@ -83,10 +116,17 @@ export interface EventStore {
     runId: string,
     input: RunAgentInput,
     agentId: string,
+    metadata?: {
+      parentRunId?: string;
+      rootRunId?: string;
+      depth?: number;
+      kind?: AgentRunKind;
+    },
   ): Promise<void>;
   append(event: StoredRunEvent): Promise<void>;
   appendBatch?(events: StoredRunEvent[]): Promise<void>;
-  finishRun(threadId: string, runId: string, status: "completed" | "error" | "stopped"): Promise<void>;
+  replaceRunEvents(threadId: string, runId: string, events: StoredRunEvent[]): Promise<void>;
+  finishRun(threadId: string, runId: string, status: RunStatus): Promise<void>;
   history(threadId: string): Promise<StoredRunEvent[]>;
   active(threadId: string): Promise<{ runId: string; status: "running" } | null>;
   removeThread(threadId: string): Promise<void>;
@@ -96,7 +136,8 @@ export interface EventStore {
 export interface RunnerDeps {
   store: ThreadStore;
   events: EventStore;
-  projector?: MessageProjector;
+  coordinator?: RunCoordinator;
+  serializer?: EventSerializer;
   titleGenerator?: ThreadTitleGenerator;
   defaultThreadTitle?: string;
   titleTimeoutMs?: number;

@@ -37,6 +37,7 @@
     "pg": ">=8.0.0"
   },
   "peerDependenciesMeta": {
+    "ioredis": { "optional": true },
     "@langchain/core": { "optional": true },
     "@langchain/langgraph": { "optional": true },
     "@langchain/langgraph-checkpoint": { "optional": true },
@@ -54,6 +55,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
+    "ioredis": "^5.10.0",
     "@types/pg": "^8.15.0",
     "better-sqlite3": "^12.9.0",
     "express": "^5.1.0",
