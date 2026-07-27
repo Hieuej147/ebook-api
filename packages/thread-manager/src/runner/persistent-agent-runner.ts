@@ -9,8 +9,12 @@ import type { BaseEvent } from '@ag-ui/client';
 import { Observable, ReplaySubject } from 'rxjs';
 import type { RunnerDeps } from '../types.js';
 import { EventCoalescer, type PersistedEvent } from './event-coalescer.js';
+import { InMemoryRunCoordinator } from '../coordination/in-memory-run-coordinator.js';
+import { JsonAgUiEventSerializer } from '../serialization/ag-ui-event-serializer.js';
 
 export class PersistentAgentRunner extends InMemoryAgentRunner {
+  private readonly coordinator;
+  private readonly serializer;
   private readonly localRuns = new Map<
     string,
     {
@@ -20,13 +24,17 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
       coalescer: EventCoalescer;
       liveEventCount: number;
       persistedRawCount: number;
+      terminalSeen: boolean;
       titlePromise: Promise<void>;
       nextSequence: () => number;
     }
   >();
+  private readonly finishingRuns = new Set<string>();
 
   constructor(private readonly deps: RunnerDeps) {
     super();
+    this.coordinator = deps.coordinator ?? new InMemoryRunCoordinator();
+    this.serializer = deps.serializer ?? new JsonAgUiEventSerializer();
   }
 
   override run(request: AgentRunnerRunRequest): Observable<BaseEvent> {
@@ -55,7 +63,8 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
   ): Promise<boolean | undefined> {
     const local = this.localRuns.get(request.threadId);
     const stopped = await super.stop(request);
-    if (stopped || local) {
+    const active = local ?? (await this.deps.events.active(request.threadId));
+    if (stopped || active) {
       if (local) {
         const pending = local.coalescer.flushAll();
         local.pendingWrites = local.pendingWrites.then(() =>
@@ -69,6 +78,11 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
         );
         await local.pendingWrites;
       }
+      if (active) {
+        await this.deps.events.finishRun(request.threadId, active.runId, 'stopped').catch(() => undefined);
+        this.localRuns.delete(request.threadId);
+      }
+      await this.coordinator.release(request.threadId, active?.runId ?? '').catch(() => undefined);
       await this.deps.store
         .setStatus(request.threadId, 'idle')
         .catch(() => undefined);
@@ -78,10 +92,11 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
   }
 
   async deleteThread(threadId: string): Promise<void> {
+    const local = this.localRuns.get(threadId);
     await this.deps.store.setStatus(threadId, 'deleting');
     await super.stop({ threadId }).catch(() => false);
     await this.deps.events.removeThread(threadId);
-    await this.deps.projector?.removeThread(threadId);
+    await this.coordinator.release(threadId, local?.runId ?? '').catch(() => undefined);
     await this.deps.store.delete(threadId);
   }
 
@@ -94,11 +109,20 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
     try {
       await this.deps.store.create(agentId, request.threadId);
       await this.deps.store.setStatus(request.threadId, 'running');
+      if (!await this.coordinator.acquire(request.threadId, request.input.runId, 5 * 60_000)) {
+        throw new Error(`Thread "${request.threadId}" already has a running agent`);
+      }
       await this.deps.events.startRun(
         request.threadId,
         request.input.runId,
         request.input,
         agentId,
+        {
+          parentRunId: request.input.parentRunId,
+          rootRunId: request.input.parentRunId ? undefined : request.input.runId,
+          depth: request.input.parentRunId ? 1 : 0,
+          kind: request.input.parentRunId ? 'subagent' : 'root',
+        },
       );
 
       const titlePromise = this.updateInitialTitle(request, agentId).catch(() => undefined);
@@ -111,6 +135,7 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
         coalescer: new EventCoalescer(),
         liveEventCount: 0,
         persistedRawCount: 0,
+        terminalSeen: false,
         titlePromise,
         nextSequence: () => sequence++,
       };
@@ -118,6 +143,9 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
       live.subscribe({
         next: (event) => {
           output.next(event);
+          if (event.type === 'RUN_FINISHED' || event.type === 'RUN_ERROR') {
+            state.terminalSeen = true;
+          }
           state.liveEventCount += 1;
           const pending = state.coalescer.push(event);
           state.pendingWrites = state.pendingWrites.then(() =>
@@ -131,6 +159,13 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
           );
         },
         error: (error: unknown) => {
+          this.emitRunError(
+            request.threadId,
+            request.input.runId,
+            error instanceof Error ? error.message : String(error),
+            output,
+            state,
+          );
           void this.finish(
             request.threadId,
             request.input.runId,
@@ -140,6 +175,24 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
           );
         },
         complete: () => {
+          if (!state.terminalSeen) {
+            const error = new Error('Run ended without emitting a terminal event');
+            this.emitRunError(
+              request.threadId,
+              request.input.runId,
+              error.message,
+              output,
+              state,
+            );
+            void this.finish(
+              request.threadId,
+              request.input.runId,
+              'error',
+              error,
+              output,
+            );
+            return;
+          }
           void this.finish(
             request.threadId,
             request.input.runId,
@@ -164,6 +217,9 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
     error: unknown,
     output: ReplaySubject<BaseEvent>,
   ): Promise<void> {
+    const finishKey = `${threadId}:${runId}`;
+    if (this.finishingRuns.has(finishKey)) return;
+    this.finishingRuns.add(finishKey);
     const state = this.localRuns.get(threadId);
     if (state) {
       const finalEvents = state.coalescer.flushAll();
@@ -173,11 +229,19 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
     }
     await state?.pendingWrites;
     await state?.titlePromise;
+    const persisted = await this.deps.events.history(threadId);
+    const runEvents = persisted.filter((item) => item.runId === runId);
+    const compacted = this.serializer.compact(runEvents.map((item) => item.event));
+    await this.deps.events.replaceRunEvents(threadId, runId, compacted.map((event, sequence) => ({ threadId, runId, sequence, event })));
     this.localRuns.delete(threadId);
     await this.deps.events.finishRun(threadId, runId, status);
+    await this.coordinator.release(threadId, runId).catch(() => undefined);
     await this.deps.store.setStatus(threadId, 'idle').catch(() => undefined);
-    if (error) output.error(error);
-    else output.complete();
+    // A terminal AG-UI event is the transport-level error signal. Completing
+    // the observable afterwards keeps CopilotKit from reporting the generic
+    // "ended without emitting a terminal event" wrapper error.
+    output.complete();
+    this.finishingRuns.delete(finishKey);
   }
 
   private async replay(
@@ -192,7 +256,12 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
           threadId,
         );
       const history = await this.deps.events.history(threadId);
-      for (const item of history) output.next(item.event);
+      const grouped = new Map<string, typeof history>();
+      for (const item of history) (grouped.get(item.runId) ?? (grouped.set(item.runId, []), grouped.get(item.runId)!)).push(item);
+      for (const items of grouped.values()) {
+        const stream = this.serializer.compact(items.map((item) => item.event));
+        for (const event of stream) output.next(event);
+      }
       const local = this.localRuns.get(threadId);
       if (local) {
         let seen = 0;
@@ -276,12 +345,30 @@ export class PersistentAgentRunner extends InMemoryAgentRunner {
     } else {
       for (const event of persistable) await this.deps.events.append(event);
     }
-    if (this.deps.projector) {
-      for (const item of persistable) {
-        await this.deps.projector.apply(item.threadId, item.runId, item.event);
-      }
-    }
+    for (const item of persistable) await this.coordinator.publish(item.threadId, item);
     state.persistedRawCount += stored.reduce((sum, item) => sum + item.rawCount, 0);
+  }
+
+  private emitRunError(
+    threadId: string,
+    runId: string,
+    message: string,
+    output: ReplaySubject<BaseEvent>,
+    state: { coalescer: EventCoalescer; pendingWrites: Promise<void>; persistedRawCount: number; nextSequence: () => number; terminalSeen: boolean },
+  ): void {
+    if (state.terminalSeen) return;
+    state.terminalSeen = true;
+    const event = {
+      type: 'RUN_ERROR',
+      threadId,
+      runId,
+      message,
+    } as BaseEvent;
+    output.next(event);
+    const pending = state.coalescer.push(event);
+    state.pendingWrites = state.pendingWrites.then(() =>
+      this.persist(threadId, runId, pending, state.nextSequence, state),
+    );
   }
 }
 

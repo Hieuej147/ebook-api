@@ -9,9 +9,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request as ExpressRequest, Response } from 'express';
 import { Readable } from 'node:stream';
-import { PersistentAgentRunner } from '@bookstore/thread-manager';
+import Redis from 'ioredis';
+import { InMemoryRunCoordinator, PersistentAgentRunner, RedisRunCoordinator, type RunCoordinator } from '@bookstore/thread-manager';
 import { PrismaEventStore } from './prisma-event.store';
-import { PrismaMessageProjector } from './prisma-message.projector';
 import { OpenAiThreadTitleGenerator } from './openai-thread-title.generator';
 import { PrismaThreadStore } from './prisma-thread.store';
 import { ThreadRequestContextService } from './thread-request-context.service';
@@ -20,16 +20,20 @@ import { ThreadRequestContextService } from './thread-request-context.service';
 export class ThreadRuntimeService {
   private readonly handler: CopilotRuntimeFetchHandler;
   readonly runner: PersistentAgentRunner;
+  private readonly coordinator: RunCoordinator;
 
   constructor(
     config: ConfigService,
     store: PrismaThreadStore,
     events: PrismaEventStore,
-    projector: PrismaMessageProjector,
     titleGenerator: OpenAiThreadTitleGenerator,
     requestContext: ThreadRequestContextService,
   ) {
     const agentId = config.get<string>('COPILOT_AGENT_ID', 'dashboard');
+    const redisUrl = config.get<string>('REDIS_URL');
+    this.coordinator = redisUrl
+      ? new RedisRunCoordinator(new Redis(redisUrl))
+      : new InMemoryRunCoordinator();
     const agentUrl = config.get<string>(
       'AGENT_URL',
       'http://127.0.0.1:8001/book-agent',
@@ -46,7 +50,7 @@ export class ThreadRuntimeService {
     this.runner = new PersistentAgentRunner({
       store,
       events,
-      projector,
+      coordinator: this.coordinator,
       titleGenerator,
       defaultThreadTitle: 'New conversation',
       titleTimeoutMs: config.get<number>('THREAD_TITLE_TIMEOUT_MS', 3_000),
@@ -60,6 +64,10 @@ export class ThreadRuntimeService {
       runtime,
       basePath: '/api/copilotkit',
     });
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await this.coordinator.close?.();
   }
 
   async handle(request: ExpressRequest, response: Response): Promise<void> {

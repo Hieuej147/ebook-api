@@ -1,16 +1,9 @@
-import type {
-  EventStore,
-  MessageProjector,
-  ThreadListOptions,
-  ThreadMeta,
-  ThreadStore,
-} from "../types.js";
+import type { EventStore, ThreadListOptions, ThreadMeta, ThreadStore } from "../types.js";
 import { ThreadNotFoundError } from "../types.js";
 
 export interface ThreadRouterDeps {
   store: ThreadStore;
   events?: EventStore;
-  projector?: MessageProjector;
   deleteThread?: (threadId: string) => Promise<void>;
 }
 
@@ -55,11 +48,6 @@ export function createThreadsRouter(deps: ThreadRouterDeps) {
         const thread = await deps.store.create(body.agentId.trim(), typeof body.threadId === "string" ? body.threadId : undefined);
         if (validTitle(body.title)) return json(await deps.store.rename(thread.id, body.title.trim()), 201);
         return json(thread, 201);
-      }
-      if (segments.length === 3 && segments[2] === "messages" && request.method === "GET") {
-        if (!deps.projector) return json({ error: "Message projection is unavailable" }, 404);
-        const threadId = decodeURIComponent(segments[1]!);
-        return json(await deps.projector.listMessages(threadId));
       }
       if (segments.length === 2) {
         const threadId = decodeURIComponent(segments[1]!);

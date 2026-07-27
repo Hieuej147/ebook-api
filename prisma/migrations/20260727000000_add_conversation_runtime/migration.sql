@@ -1,5 +1,18 @@
+-- Clean rebuild of the thread runtime. This intentionally removes only the
+-- conversation runtime data; books, users, orders, and other domain tables are
+-- untouched. Use this migration on a local database after backing up any
+-- conversations you still need.
+DROP TABLE IF EXISTS "conversation_messages" CASCADE;
+DROP TABLE IF EXISTS "agent_events" CASCADE;
+DROP TABLE IF EXISTS "agent_runs" CASCADE;
+DROP TABLE IF EXISTS "conversation_threads" CASCADE;
+DROP TYPE IF EXISTS "AgentRunKind" CASCADE;
+DROP TYPE IF EXISTS "AgentRunStatus" CASCADE;
+DROP TYPE IF EXISTS "ConversationThreadStatus" CASCADE;
+
 CREATE TYPE "ConversationThreadStatus" AS ENUM ('IDLE', 'RUNNING', 'DELETING');
 CREATE TYPE "AgentRunStatus" AS ENUM ('RUNNING', 'COMPLETED', 'ERROR', 'STOPPED');
+CREATE TYPE "AgentRunKind" AS ENUM ('ROOT', 'SUBAGENT');
 
 CREATE TABLE "conversation_threads" (
   "id" TEXT NOT NULL,
@@ -17,6 +30,10 @@ CREATE TABLE "agent_runs" (
   "id" TEXT NOT NULL,
   "threadId" TEXT NOT NULL,
   "agentId" TEXT NOT NULL,
+  "parentRunId" TEXT,
+  "rootRunId" TEXT NOT NULL,
+  "depth" INTEGER NOT NULL DEFAULT 0,
+  "kind" "AgentRunKind" NOT NULL DEFAULT 'ROOT',
   "input" JSONB NOT NULL,
   "status" "AgentRunStatus" NOT NULL DEFAULT 'RUNNING',
   "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -36,6 +53,7 @@ CREATE TABLE "agent_events" (
 CREATE INDEX "conversation_threads_userId_agentId_archivedAt_updatedAt_idx" ON "conversation_threads"("userId", "agentId", "archivedAt", "updatedAt");
 CREATE INDEX "conversation_threads_agentId_updatedAt_idx" ON "conversation_threads"("agentId", "updatedAt");
 CREATE INDEX "agent_runs_threadId_startedAt_idx" ON "agent_runs"("threadId", "startedAt");
+CREATE INDEX "agent_runs_threadId_parentRunId_idx" ON "agent_runs"("threadId", "parentRunId");
 CREATE UNIQUE INDEX "agent_runs_one_active_per_thread" ON "agent_runs"("threadId") WHERE "status" = 'RUNNING';
 CREATE INDEX "agent_events_threadId_createdAt_sequence_idx" ON "agent_events"("threadId", "createdAt", "sequence");
 

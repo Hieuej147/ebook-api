@@ -59,10 +59,9 @@ enum AgentRunStatus {
   STOPPED
 }
 
-enum ConversationMessageStatus {
-  STREAMING
-  COMPLETED
-  ERROR
+enum AgentRunKind {
+  ROOT
+  SUBAGENT
 }
 
 // enum WriteStyle {
@@ -288,7 +287,6 @@ model ConversationThread {
 
   user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   runs AgentRun[]
-  messages ConversationMessage[]
 
   @@index([userId, agentId, archivedAt, updatedAt])
   @@index([agentId, updatedAt])
@@ -299,6 +297,10 @@ model AgentRun {
   id         String         @id
   threadId   String
   agentId    String
+  parentRunId String?
+  rootRunId   String
+  depth       Int          @default(0)
+  kind        AgentRunKind @default(ROOT)
   input      Json
   status     AgentRunStatus @default(RUNNING)
   startedAt  DateTime       @default(now())
@@ -306,28 +308,9 @@ model AgentRun {
 
   thread ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   events AgentEvent[]
-  messages ConversationMessage[]
-
   @@index([threadId, startedAt])
+  @@index([threadId, parentRunId])
   @@map("agent_runs")
-}
-
-model ConversationMessage {
-  id        String                    @id
-  threadId  String
-  runId     String
-  role      String
-  content   String
-  status    ConversationMessageStatus @default(STREAMING)
-  createdAt DateTime                  @default(now())
-  updatedAt DateTime                  @updatedAt
-
-  thread ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  run    AgentRun           @relation(fields: [runId], references: [id], onDelete: Cascade)
-
-  @@unique([runId, id])
-  @@index([threadId, createdAt])
-  @@map("conversation_messages")
 }
 
 model AgentEvent {
